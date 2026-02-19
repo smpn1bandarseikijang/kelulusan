@@ -44,13 +44,15 @@
 <body class="min-h-screen flex flex-col items-center justify-center p-4">
 
     <!-- Container Utama -->
-    <div class="w-full max-w-3xl bg-white shadow-2xl rounded-2xl overflow-hidden">
+    <div class="w-full max-w-3xl bg-white shadow-2xl rounded-2xl overflow-hidden relative">
         
         <!-- Header Sekolah -->
         <div class="school-header-bg text-white p-6 text-center relative">
-            <div class="mb-2">
-                <!-- Placeholder Logo Sekolah (Gunakan FontAwesome jika tidak ada gambar) -->
-                <i class="fas fa-graduation-cap text-4xl text-yellow-300"></i>
+            <div class="mb-4 flex justify-center">
+                <!-- Logo Sekolah -->
+                <img src="https://blogger.googleusercontent.com/img/a/AVvXsEjmhC6e7EJzV7D4RSivge29p9o0u5TxGf8fDGYKxR6uT85CdDJ3uaQ7yaxdBrj9CAHU2KFRY_rGDBFa8jn_G1xkgfHSVAxcOVnavvkaHfR4GQis8WzRbLGwT5sRS9D-015UPg1PmfeBNgNFv-zDSY5zAmHjZEE_utTYcqqusKbWQeFdMuBNgI-ziu0t-Ge1=s500" 
+                     alt="Logo SMPN 1 Bandar Seikijang" 
+                     class="h-24 w-auto drop-shadow-md">
             </div>
             <h1 class="text-2xl font-bold uppercase tracking-wider">SMPN 1 Bandar Seikijang</h1>
             <p class="text-sm opacity-90 mt-1">Pengumuman Kelulusan Siswa Tahun Ajaran 2025/2026</p>
@@ -146,14 +148,15 @@
                         <!-- Space untuk Tanda Tangan / QR Code -->
                         <div class="text-xs text-gray-400 italic">[Tanda Tangan Elektronik]</div>
                     </div>
-                    <p class="text-sm font-bold text-gray-800 underline">NAMA KEPALA SEKOLAH, S.Pd., M.Pd.</p>
-                    <p class="text-xs text-gray-500">NIP. 19800101 200501 1 001</p>
+                    <p class="text-sm font-bold text-gray-800 underline">Nur Ilis Harahap, S.Pd.</p>
+                    <p class="text-xs text-gray-500">NIP. 196610231994122001</p>
                 </div>
 
                 <!-- Tombol Aksi (Print/Kembali) -->
                 <div class="mt-8 flex justify-center gap-4 no-print">
-                    <button onclick="window.print()" class="bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2 px-6 rounded-lg transition shadow">
-                        <i class="fas fa-print mr-2"></i> Cetak / Simpan PDF
+                    <!-- Tombol Download SKL (Memunculkan Modal) -->
+                    <button onclick="showDownloadModal()" class="bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2 px-6 rounded-lg transition shadow flex items-center">
+                        <i class="fas fa-file-download mr-2"></i> Download SKL
                     </button>
                     <button onclick="resetApp()" class="bg-gray-600 hover:bg-gray-700 text-white font-semibold py-2 px-6 rounded-lg transition shadow">
                         <i class="fas fa-arrow-left mr-2"></i> Kembali
@@ -165,6 +168,24 @@
         <!-- Update Footer -->
         <div class="bg-gray-100 p-4 text-center text-xs text-gray-500 no-print">
             Development By Andri F. &copy; 2026 SMPN 1 Bandar Seikijang. All Rights Reserved.
+        </div>
+    </div>
+
+    <!-- Modal Notifikasi Download -->
+    <div id="downloadModal" class="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-60 hidden transition-opacity duration-300">
+        <div class="bg-white rounded-xl shadow-2xl p-6 max-w-sm w-full mx-4 transform transition-all scale-100 fade-in text-center relative">
+            <div class="mb-4">
+                <div class="w-16 h-16 bg-blue-100 rounded-full flex items-center justify-center mx-auto">
+                    <i class="fas fa-info text-2xl text-blue-600"></i>
+                </div>
+            </div>
+            <h3 class="text-xl font-bold text-gray-800 mb-2">Informasi</h3>
+            <p class="text-gray-600 mb-6 leading-relaxed">
+                File SKL (Surat Keterangan Lulus) saat ini belum tersedia. Silakan cek secara berkala.
+            </p>
+            <button onclick="closeDownloadModal()" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2.5 px-4 rounded-lg transition duration-200">
+                Mengerti
+            </button>
         </div>
     </div>
 
@@ -321,6 +342,23 @@
             document.getElementById('resultSection').classList.add('hidden');
             document.getElementById('searchSection').classList.remove('hidden');
             document.getElementById('nisnInput').focus();
+        }
+
+        // Logic Modal Download
+        function showDownloadModal() {
+            document.getElementById('downloadModal').classList.remove('hidden');
+        }
+
+        function closeDownloadModal() {
+            document.getElementById('downloadModal').classList.add('hidden');
+        }
+
+        // Close modal when clicking outside
+        window.onclick = function(event) {
+            const modal = document.getElementById('downloadModal');
+            if (event.target == modal) {
+                closeDownloadModal();
+            }
         }
 
         // Auto focus on load
