@@ -1,0 +1,338 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Pengumuman Kelulusan - SMPN 1 Bandar Seikijang</title>
+    
+    <!-- Tailwind CSS (via CDN) -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&display=swap" rel="stylesheet">
+    
+    <!-- Font Awesome untuk Ikon -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #f0fdf4; /* Light Green Tint */
+        }
+        .school-header-bg {
+            background: linear-gradient(135deg, #166534 0%, #15803d 100%);
+        }
+        /* Animasi sederhana untuk hasil */
+        .fade-in {
+            animation: fadeIn 0.5s ease-in;
+        }
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        
+        /* Print Styles */
+        @media print {
+            body { background-color: white; }
+            .no-print { display: none !important; }
+            .print-only { display: block !important; }
+            .result-card { box-shadow: none; border: 1px solid #ccc; }
+        }
+    </style>
+</head>
+<body class="min-h-screen flex flex-col items-center justify-center p-4">
+
+    <!-- Container Utama -->
+    <div class="w-full max-w-3xl bg-white shadow-2xl rounded-2xl overflow-hidden">
+        
+        <!-- Header Sekolah -->
+        <div class="school-header-bg text-white p-6 text-center relative">
+            <div class="mb-2">
+                <!-- Placeholder Logo Sekolah (Gunakan FontAwesome jika tidak ada gambar) -->
+                <i class="fas fa-graduation-cap text-4xl text-yellow-300"></i>
+            </div>
+            <h1 class="text-2xl font-bold uppercase tracking-wider">SMPN 1 Bandar Seikijang</h1>
+            <p class="text-sm opacity-90 mt-1">Pengumuman Kelulusan Siswa Tahun Ajaran 2025/2026</p>
+            <div class="absolute bottom-0 left-0 w-full h-1 bg-yellow-400"></div>
+        </div>
+
+        <!-- Bagian Form Input (Akan disembunyikan saat print) -->
+        <div class="p-8 no-print" id="searchSection">
+            <div class="text-center mb-6">
+                <h2 class="text-gray-700 font-semibold text-lg">Cek Status Kelulusan</h2>
+                <p class="text-gray-500 text-sm">Masukkan 10 digit NISN Anda</p>
+            </div>
+
+            <form id="checkForm" onsubmit="handleSearch(event)" class="space-y-4">
+                <div class="relative">
+                    <span class="absolute inset-y-0 left-0 flex items-center pl-3 text-gray-400">
+                        <i class="fas fa-id-card"></i>
+                    </span>
+                    <input type="text" id="nisnInput" maxlength="10" 
+                        class="w-full pl-10 pr-4 py-3 border-2 border-gray-200 rounded-lg focus:outline-none focus:border-green-600 focus:ring-1 focus:ring-green-600 transition-colors text-lg tracking-widest text-center placeholder-gray-400"
+                        placeholder="Contoh: 0012345678" required>
+                </div>
+                
+                <div id="errorMessage" class="hidden bg-red-100 border-l-4 border-red-500 text-red-700 p-3 rounded text-sm text-center">
+                    <p><i class="fas fa-exclamation-circle mr-1"></i> <span id="errorText">Data tidak ditemukan.</span></p>
+                </div>
+
+                <div class="flex gap-3">
+                    <button type="button" onclick="resetApp()" 
+                        class="w-1/3 bg-gray-200 hover:bg-gray-300 text-gray-700 font-semibold py-3 px-4 rounded-lg transition duration-200">
+                        <i class="fas fa-rotate-left mr-1"></i> Reset
+                    </button>
+                    <button type="submit" 
+                        class="w-2/3 bg-green-700 hover:bg-green-800 text-white font-bold py-3 px-4 rounded-lg transition duration-200 shadow-lg transform hover:-translate-y-0.5">
+                        <i class="fas fa-search mr-2"></i> Cek Kelulusan
+                    </button>
+                </div>
+            </form>
+        </div>
+
+        <!-- Bagian Hasil (Hidden by default) -->
+        <div id="resultSection" class="hidden bg-white">
+            <div class="p-6 md:p-8 fade-in">
+                
+                <!-- Identitas Siswa -->
+                <div class="border-b-2 border-dashed border-gray-200 pb-4 mb-6">
+                    <div class="flex flex-col md:flex-row justify-between items-start md:items-center">
+                        <div>
+                            <p class="text-sm text-gray-500 uppercase tracking-wide">Nama Peserta Didik</p>
+                            <h2 class="text-2xl font-bold text-gray-800" id="resName">Nama Siswa</h2>
+                        </div>
+                        <div class="mt-2 md:mt-0 text-left md:text-right">
+                            <p class="text-sm text-gray-500 uppercase tracking-wide">NISN</p>
+                            <p class="text-xl font-mono font-semibold text-gray-700" id="resNisn">0000000000</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Status Kelulusan -->
+                <div class="text-center mb-8">
+                    <p class="text-gray-600 mb-2">Berdasarkan hasil Rapat Pleno Dewan Guru, dinyatakan:</p>
+                    <div id="statusBadge" class="inline-block px-8 py-3 rounded-full text-xl font-bold tracking-widest shadow-md">
+                        LULUS
+                    </div>
+                </div>
+
+                <!-- Tabel Nilai -->
+                <div class="overflow-x-auto">
+                    <h3 class="text-md font-bold text-gray-700 mb-3 border-l-4 border-green-600 pl-2">Daftar Nilai Ujian Sekolah</h3>
+                    <table class="w-full text-sm text-left text-gray-600 border border-gray-200">
+                        <thead class="text-xs text-gray-700 uppercase bg-gray-50">
+                            <tr>
+                                <th scope="col" class="px-4 py-3 border-b border-r w-10 text-center">No</th>
+                                <th scope="col" class="px-4 py-3 border-b border-r">Mata Pelajaran</th>
+                                <th scope="col" class="px-4 py-3 border-b text-center w-24">Nilai Akhir</th>
+                            </tr>
+                        </thead>
+                        <tbody id="gradesTableBody">
+                            <!-- Rows will be populated by JS -->
+                        </tbody>
+                    </table>
+                </div>
+
+                <!-- Footer Surat Keterangan -->
+                <div class="mt-8 pt-6 border-t border-gray-200 text-center md:text-right">
+                    <p class="text-sm text-gray-600 mb-1">Bandar Seikijang, <span id="currentDate"></span></p>
+                    <p class="text-sm text-gray-600">Kepala Sekolah,</p>
+                    <div class="h-20 flex items-center justify-center md:justify-end">
+                        <!-- Space untuk Tanda Tangan / QR Code -->
+                        <div class="text-xs text-gray-400 italic">[Tanda Tangan Elektronik]</div>
+                    </div>
+                    <p class="text-sm font-bold text-gray-800 underline">NAMA KEPALA SEKOLAH, S.Pd., M.Pd.</p>
+                    <p class="text-xs text-gray-500">NIP. 19800101 200501 1 001</p>
+                </div>
+
+                <!-- Tombol Aksi (Print/Kembali) -->
+                <div class="mt-8 flex justify-center gap-4 no-print">
+                    <button onclick="window.print()" class="bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2 px-6 rounded-lg transition shadow">
+                        <i class="fas fa-print mr-2"></i> Cetak / Simpan PDF
+                    </button>
+                    <button onclick="resetApp()" class="bg-gray-600 hover:bg-gray-700 text-white font-semibold py-2 px-6 rounded-lg transition shadow">
+                        <i class="fas fa-arrow-left mr-2"></i> Kembali
+                    </button>
+                </div>
+            </div>
+        </div>
+        
+        <div class="bg-gray-100 p-4 text-center text-xs text-gray-500 no-print">
+            &copy; 2026 SMPN 1 Bandar Seikijang. All Rights Reserved.
+        </div>
+    </div>
+
+    <!-- JAVASCRIPT LOGIC -->
+    <script>
+        // 1. DATA DATABASE (SIMULASI)
+        // Nanti bagian ini bisa diganti dengan fetch() ke Google Sheets
+        // Format Data: NISN (Key) -> Object Siswa
+        const databaseSiswa = {
+            "0012345678": {
+                nama: "BUDI SANTOSO",
+                nisn: "0012345678",
+                status: "LULUS",
+                nilai: {
+                    agama: 85,
+                    pancasila: 88,
+                    indo: 90,
+                    matematika: 78,
+                    ipa: 82,
+                    ips: 85,
+                    inggris: 80,
+                    penjas: 92,
+                    informatika: 88,
+                    seni: 86,
+                    mulok: 90 // Budaya Melayu Riau
+                }
+            },
+            "0087654321": {
+                nama: "SITI AMINAH",
+                nisn: "0087654321",
+                status: "LULUS",
+                nilai: {
+                    agama: 92,
+                    pancasila: 90,
+                    indo: 95,
+                    matematika: 88,
+                    ipa: 90,
+                    ips: 88,
+                    inggris: 94,
+                    penjas: 85,
+                    informatika: 90,
+                    seni: 88,
+                    mulok: 95
+                }
+            },
+            "1234567890": {
+                nama: "ANDI PRATAMA (Contoh Tidak Lulus)",
+                nisn: "1234567890",
+                status: "DITUNDA", // Bisa LULUS, TIDAK LULUS, DITUNDA
+                nilai: {
+                    agama: 70, pancasila: 70, indo: 70, matematika: 40, 
+                    ipa: 50, ips: 60, inggris: 50, penjas: 75, 
+                    informatika: 60, seni: 70, mulok: 75
+                }
+            }
+        };
+
+        // Daftar Mata Pelajaran untuk Mapping ke Tabel
+        const mapelConfig = [
+            { id: 'agama', label: 'Pendidikan Agama dan Budi Pekerti' },
+            { id: 'pancasila', label: 'Pendidikan Pancasila' },
+            { id: 'indo', label: 'Bahasa Indonesia' },
+            { id: 'matematika', label: 'Matematika' },
+            { id: 'ipa', label: 'Ilmu Pengetahuan Alam (IPA)' },
+            { id: 'ips', label: 'Ilmu Pengetahuan Sosial (IPS)' },
+            { id: 'inggris', label: 'Bahasa Inggris' },
+            { id: 'penjas', label: 'PJOK' },
+            { id: 'informatika', label: 'Informatika' },
+            { id: 'seni', label: 'Seni Budaya' },
+            { id: 'mulok', label: 'Muatan Lokal (Budaya Melayu Riau)' }
+        ];
+
+        // Set Tanggal Hari Ini
+        const options = { year: 'numeric', month: 'long', day: 'numeric' };
+        document.getElementById('currentDate').innerText = new Date().toLocaleDateString('id-ID', options);
+
+        // Fungsi Cek Kelulusan
+        function handleSearch(event) {
+            event.preventDefault();
+            const nisn = document.getElementById('nisnInput').value.trim();
+            const errorBox = document.getElementById('errorMessage');
+            const searchSection = document.getElementById('searchSection');
+            const resultSection = document.getElementById('resultSection');
+
+            // Validasi Input
+            if (nisn.length !== 10 || isNaN(nisn)) {
+                showError("Mohon masukkan 10 digit NISN dengan benar.");
+                return;
+            }
+
+            // Cek Data
+            // NOTE: Di sini nanti Anda bisa ganti dengan logika mencari di array Google Sheets
+            const siswa = databaseSiswa[nisn];
+
+            if (siswa) {
+                // Sembunyikan Form, Tampilkan Hasil
+                errorBox.classList.add('hidden');
+                searchSection.classList.add('hidden');
+                resultSection.classList.remove('hidden');
+
+                // Isi Data Siswa
+                document.getElementById('resName').innerText = siswa.nama;
+                document.getElementById('resNisn').innerText = siswa.nisn;
+
+                // Set Status Badge
+                const badge = document.getElementById('statusBadge');
+                badge.className = "inline-block px-8 py-3 rounded-full text-xl font-bold tracking-widest shadow-md text-white ";
+                
+                if(siswa.status === "LULUS") {
+                    badge.classList.add("bg-green-600");
+                    badge.innerText = "LULUS";
+                } else if (siswa.status === "TIDAK LULUS") {
+                    badge.classList.add("bg-red-600");
+                    badge.innerText = "TIDAK LULUS";
+                } else {
+                    badge.classList.add("bg-yellow-500");
+                    badge.innerText = "DITUNDA / HUBUNGI SEKOLAH";
+                }
+
+                // Render Tabel Nilai
+                const tbody = document.getElementById('gradesTableBody');
+                tbody.innerHTML = ''; // Reset isi tabel
+
+                mapelConfig.forEach((mapel, index) => {
+                    const nilai = siswa.nilai[mapel.id] || "-";
+                    const row = `
+                        <tr class="bg-white border-b hover:bg-gray-50">
+                            <td class="px-4 py-3 text-center font-medium text-gray-900">${index + 1}</td>
+                            <td class="px-4 py-3 text-gray-700">${mapel.label}</td>
+                            <td class="px-4 py-3 text-center font-bold text-gray-800">${nilai}</td>
+                        </tr>
+                    `;
+                    tbody.innerHTML += row;
+                });
+
+            } else {
+                showError("NISN tidak ditemukan dalam database kelulusan.");
+            }
+        }
+
+        function showError(msg) {
+            const errorBox = document.getElementById('errorMessage');
+            document.getElementById('errorText').innerText = msg;
+            errorBox.classList.remove('hidden');
+            // Shake animation effect
+            const input = document.getElementById('nisnInput');
+            input.classList.add('border-red-500');
+            setTimeout(() => input.classList.remove('border-red-500'), 2000);
+        }
+
+        function resetApp() {
+            document.getElementById('checkForm').reset();
+            document.getElementById('errorMessage').classList.add('hidden');
+            document.getElementById('resultSection').classList.add('hidden');
+            document.getElementById('searchSection').classList.remove('hidden');
+            document.getElementById('nisnInput').focus();
+        }
+
+        // Auto focus on load
+        window.onload = function() {
+            document.getElementById('nisnInput').focus();
+        };
+
+        /* * CATATAN UNTUK INTEGRASI GOOGLE SHEET KEDEPANNYA:
+         * * 1. Buat Google Apps Script (DoGet) yang me-return JSON dari Sheet Anda.
+         * 2. Ubah const databaseSiswa menjadi array kosong [].
+         * 3. Saat halaman load, fetch() data JSON tersebut dan simpan ke variabel.
+         * * Contoh Fetch Code nanti:
+         * let dataSiswaRemote = [];
+         * fetch('URL_GOOGLE_SCRIPT_MACRO_ANDA')
+         * .then(res => res.json())
+         * .then(data => { dataSiswaRemote = data; });
+         * * Lalu di fungsi handleSearch, Anda cari di dataSiswaRemote menggunakan .find().
+         */
+    </script>
+</body>
+</html>
