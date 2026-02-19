@@ -5,25 +5,23 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Pengumuman Kelulusan - SMPN 1 Bandar Seikijang</title>
     
-    <!-- Tailwind CSS (via CDN) -->
+    <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
     
-    <!-- Google Fonts -->
+    <!-- Fonts -->
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&display=swap" rel="stylesheet">
     
-    <!-- Font Awesome untuk Ikon -->
+    <!-- Icons -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 
     <style>
         body {
             font-family: 'Inter', sans-serif;
-            background-color: #eff6ff; /* Light Blue Tint (Blue-50) */
+            background-color: #eff6ff;
         }
         .school-header-bg {
-            /* Ubah gradien ke Biru SMP (Navy ke Royal Blue) */
             background: linear-gradient(135deg, #1e3a8a 0%, #2563eb 100%);
         }
-        /* Animasi sederhana untuk hasil */
         .fade-in {
             animation: fadeIn 0.5s ease-in;
         }
@@ -32,24 +30,36 @@
             to { opacity: 1; transform: translateY(0); }
         }
         
-        /* Print Styles */
         @media print {
             body { background-color: white; }
             .no-print { display: none !important; }
             .print-only { display: block !important; }
-            .result-card { box-shadow: none; border: 1px solid #ccc; }
+            .break-before { page-break-before: always; }
+        }
+
+        /* Loading Spinner */
+        .loader {
+            border: 3px solid #f3f3f3;
+            border-radius: 50%;
+            border-top: 3px solid #2563eb;
+            width: 20px;
+            height: 20px;
+            -webkit-animation: spin 1s linear infinite; /* Safari */
+            animation: spin 1s linear infinite;
+        }
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
         }
     </style>
 </head>
 <body class="min-h-screen flex flex-col items-center justify-center p-4">
 
-    <!-- Container Utama -->
-    <div class="w-full max-w-3xl bg-white shadow-2xl rounded-2xl overflow-hidden relative">
+    <div class="w-full max-w-4xl bg-white shadow-2xl rounded-2xl overflow-hidden relative">
         
-        <!-- Header Sekolah -->
+        <!-- Header -->
         <div class="school-header-bg text-white p-6 text-center relative">
             <div class="mb-4 flex justify-center">
-                <!-- Logo Sekolah -->
                 <img src="https://blogger.googleusercontent.com/img/a/AVvXsEjmhC6e7EJzV7D4RSivge29p9o0u5TxGf8fDGYKxR6uT85CdDJ3uaQ7yaxdBrj9CAHU2KFRY_rGDBFa8jn_G1xkgfHSVAxcOVnavvkaHfR4GQis8WzRbLGwT5sRS9D-015UPg1PmfeBNgNFv-zDSY5zAmHjZEE_utTYcqqusKbWQeFdMuBNgI-ziu0t-Ge1=s500" 
                      alt="Logo SMPN 1 Bandar Seikijang" 
                      class="h-24 w-auto drop-shadow-md">
@@ -59,23 +69,29 @@
             <div class="absolute bottom-0 left-0 w-full h-1 bg-yellow-400"></div>
         </div>
 
-        <!-- Bagian Form Input (Akan disembunyikan saat print) -->
+        <!-- Form Input -->
         <div class="p-8 no-print" id="searchSection">
             <div class="text-center mb-6">
                 <h2 class="text-gray-700 font-semibold text-lg">Cek Status Kelulusan</h2>
-                <p class="text-gray-500 text-sm">Masukkan 10 digit NISN Anda</p>
+                <p class="text-gray-500 text-sm">Masukkan NISN Anda</p>
             </div>
 
-            <!-- Tambahkan autocomplete="off" untuk mematikan saran input -->
+            <!-- Loading Indicator -->
+            <div id="loadingData" class="text-center text-sm text-blue-600 mb-4 hidden">
+                <div class="flex justify-center items-center gap-2">
+                    <div class="loader"></div>
+                    <span>Menghubungkan ke database sekolah...</span>
+                </div>
+            </div>
+
             <form id="checkForm" onsubmit="handleSearch(event)" class="space-y-4" autocomplete="off">
                 <div class="relative">
                     <span class="absolute inset-y-0 left-0 flex items-center pl-3 text-gray-400">
                         <i class="fas fa-id-card"></i>
                     </span>
-                    <!-- Ubah warna fokus border ke biru -->
-                    <input type="text" id="nisnInput" maxlength="10" 
+                    <input type="text" id="nisnInput" 
                         class="w-full pl-10 pr-4 py-3 border-2 border-gray-200 rounded-lg focus:outline-none focus:border-blue-600 focus:ring-1 focus:ring-blue-600 transition-colors text-lg tracking-widest text-center placeholder-gray-400"
-                        placeholder="Contoh: 0012345678" required autocomplete="off">
+                        placeholder="Contoh: 0012345678" required autocomplete="off" disabled>
                 </div>
                 
                 <div id="errorMessage" class="hidden bg-red-100 border-l-4 border-red-500 text-red-700 p-3 rounded text-sm text-center">
@@ -83,95 +99,119 @@
                 </div>
 
                 <div class="flex gap-3">
-                    <button type="button" onclick="resetApp()" 
+                    <button type="button" onclick="resetApp()" id="btnReset" disabled
                         class="w-1/3 bg-gray-200 hover:bg-gray-300 text-gray-700 font-semibold py-3 px-4 rounded-lg transition duration-200">
                         <i class="fas fa-rotate-left mr-1"></i> Reset
                     </button>
-                    <!-- Ubah warna tombol ke biru -->
-                    <button type="submit" 
-                        class="w-2/3 bg-blue-700 hover:bg-blue-800 text-white font-bold py-3 px-4 rounded-lg transition duration-200 shadow-lg transform hover:-translate-y-0.5">
+                    <button type="submit" id="btnSearch" disabled
+                        class="w-2/3 bg-blue-700 hover:bg-blue-800 text-white font-bold py-3 px-4 rounded-lg transition duration-200 shadow-lg transform hover:-translate-y-0.5 disabled:opacity-50 disabled:cursor-not-allowed">
                         <i class="fas fa-search mr-2"></i> Cek Kelulusan
                     </button>
                 </div>
             </form>
         </div>
 
-        <!-- Bagian Hasil (Hidden by default) -->
+        <!-- Hasil (Hidden by default) -->
         <div id="resultSection" class="hidden bg-white">
             <div class="p-6 md:p-8 fade-in">
                 
-                <!-- Identitas Siswa -->
-                <div class="border-b-2 border-dashed border-gray-200 pb-4 mb-6">
-                    <div class="flex flex-col md:flex-row justify-between items-start md:items-center">
-                        <div>
-                            <p class="text-sm text-gray-500 uppercase tracking-wide">Nama Peserta Didik</p>
-                            <h2 class="text-2xl font-bold text-gray-800" id="resName">Nama Siswa</h2>
-                        </div>
-                        <div class="mt-2 md:mt-0 text-left md:text-right">
-                            <p class="text-sm text-gray-500 uppercase tracking-wide">NISN</p>
-                            <p class="text-xl font-mono font-semibold text-gray-700" id="resNisn">0000000000</p>
+                <!-- Header Profil Siswa -->
+                <div class="flex flex-col md:flex-row gap-6 mb-8 border-b-2 border-dashed border-gray-200 pb-6">
+                    <!-- Foto Siswa -->
+                    <div class="w-full md:w-1/4 flex justify-center md:justify-start">
+                        <div class="w-32 h-40 bg-gray-200 rounded-lg overflow-hidden shadow-md border border-gray-300">
+                            <img id="resFoto" src="" alt="Foto Siswa" class="w-full h-full object-cover hidden">
+                            <div id="noFoto" class="w-full h-full flex items-center justify-center text-gray-400 flex-col">
+                                <i class="fas fa-user text-4xl mb-2"></i>
+                                <span class="text-xs">No Photo</span>
+                            </div>
                         </div>
                     </div>
-                </div>
 
-                <!-- Status Kelulusan -->
-                <div class="text-center mb-8">
-                    <p class="text-gray-600 mb-2">Berdasarkan hasil Rapat Pleno Dewan Guru, dinyatakan:</p>
-                    <div id="statusBadge" class="inline-block px-8 py-3 rounded-full text-xl font-bold tracking-widest shadow-md">
-                        LULUS
+                    <!-- Detail Siswa -->
+                    <div class="w-full md:w-3/4 flex flex-col justify-between">
+                        <div>
+                            <p class="text-sm text-gray-500 uppercase tracking-wide">Nama Peserta Didik</p>
+                            <h2 class="text-2xl font-bold text-gray-800 mb-2" id="resName">Nama Siswa</h2>
+                            
+                            <div class="grid grid-cols-2 gap-4 mt-2">
+                                <div>
+                                    <p class="text-xs text-gray-500 uppercase">NISN</p>
+                                    <p class="text-lg font-mono font-semibold text-gray-700" id="resNisn">0000000000</p>
+                                </div>
+                                <div>
+                                    <p class="text-xs text-gray-500 uppercase">Peringkat Umum</p>
+                                    <p class="text-lg font-bold text-blue-600" id="resRank">-</p>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Status Badge Area -->
+                        <div class="mt-4 md:mt-0 md:text-right">
+                            <p class="text-xs text-gray-500 mb-1">Status Kelulusan:</p>
+                            <div id="statusBadge" class="inline-block px-6 py-2 rounded-full text-lg font-bold tracking-widest shadow-sm">
+                                LULUS
+                            </div>
+                        </div>
                     </div>
                 </div>
 
                 <!-- Tabel Nilai -->
-                <div class="overflow-x-auto">
-                    <!-- Ubah border kiri judul ke biru -->
+                <div class="overflow-x-auto mb-6">
                     <h3 class="text-md font-bold text-gray-700 mb-3 border-l-4 border-blue-600 pl-2">Daftar Nilai Ujian Sekolah</h3>
                     <table class="w-full text-sm text-left text-gray-600 border border-gray-200">
-                        <thead class="text-xs text-gray-700 uppercase bg-gray-50">
+                        <thead class="text-xs text-gray-700 uppercase bg-blue-50">
                             <tr>
                                 <th scope="col" class="px-4 py-3 border-b border-r w-10 text-center">No</th>
                                 <th scope="col" class="px-4 py-3 border-b border-r">Mata Pelajaran</th>
-                                <th scope="col" class="px-4 py-3 border-b text-center w-24">Nilai Akhir</th>
+                                <th scope="col" class="px-4 py-3 border-b text-center w-24">Nilai</th>
                             </tr>
                         </thead>
                         <tbody id="gradesTableBody">
-                            <!-- Rows will be populated by JS -->
+                            <!-- Rows diisi via JS -->
                         </tbody>
+                        <tfoot class="bg-gray-50 font-bold text-gray-700">
+                            <tr>
+                                <td colspan="2" class="px-4 py-3 text-right border-t">Jumlah Nilai</td>
+                                <td class="px-4 py-3 text-center border-t border-l" id="resTotal">0</td>
+                            </tr>
+                            <tr>
+                                <td colspan="2" class="px-4 py-3 text-right border-t">Rata-Rata</td>
+                                <td class="px-4 py-3 text-center border-t border-l text-blue-700" id="resAvg">0</td>
+                            </tr>
+                        </tfoot>
                     </table>
                 </div>
 
-                <!-- Footer Surat Keterangan -->
+                <!-- Footer Surat -->
                 <div class="mt-8 pt-6 border-t border-gray-200 text-center md:text-right">
                     <p class="text-sm text-gray-600 mb-1">Bandar Seikijang, <span id="currentDate"></span></p>
                     <p class="text-sm text-gray-600">Kepala Sekolah,</p>
                     <div class="h-20 flex items-center justify-center md:justify-end">
-                        <!-- Space untuk Tanda Tangan / QR Code -->
                         <div class="text-xs text-gray-400 italic">[Tanda Tangan Elektronik]</div>
                     </div>
                     <p class="text-sm font-bold text-gray-800 underline">Nur Ilis Harahap, S.Pd.</p>
                     <p class="text-xs text-gray-500">NIP. 196610231994122001</p>
                 </div>
 
-                <!-- Tombol Aksi (Print/Kembali) -->
-                <div class="mt-8 flex justify-center gap-4 no-print">
-                    <!-- Tombol Download SKL (Memunculkan Modal) -->
-                    <button onclick="showDownloadModal()" class="bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2 px-6 rounded-lg transition shadow flex items-center">
+                <!-- Tombol Aksi -->
+                <div class="mt-8 flex flex-col sm:flex-row justify-center gap-4 no-print">
+                    <button onclick="showDownloadModal()" class="bg-blue-600 hover:bg-blue-700 text-white font-semibold py-3 px-6 rounded-lg transition shadow flex items-center justify-center">
                         <i class="fas fa-file-download mr-2"></i> Download SKL
                     </button>
-                    <button onclick="resetApp()" class="bg-gray-600 hover:bg-gray-700 text-white font-semibold py-2 px-6 rounded-lg transition shadow">
+                    <button onclick="resetApp()" class="bg-gray-600 hover:bg-gray-700 text-white font-semibold py-3 px-6 rounded-lg transition shadow flex items-center justify-center">
                         <i class="fas fa-arrow-left mr-2"></i> Kembali
                     </button>
                 </div>
             </div>
         </div>
         
-        <!-- Update Footer -->
         <div class="bg-gray-100 p-4 text-center text-xs text-gray-500 no-print">
             Development By Andri F. &copy; 2026 SMPN 1 Bandar Seikijang. All Rights Reserved.
         </div>
     </div>
 
-    <!-- Modal Notifikasi Download -->
+    <!-- Modal Notifikasi -->
     <div id="downloadModal" class="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-60 hidden transition-opacity duration-300">
         <div class="bg-white rounded-xl shadow-2xl p-6 max-w-sm w-full mx-4 transform transition-all scale-100 fade-in text-center relative">
             <div class="mb-4">
@@ -181,7 +221,7 @@
             </div>
             <h3 class="text-xl font-bold text-gray-800 mb-2">Informasi</h3>
             <p class="text-gray-600 mb-6 leading-relaxed">
-                File SKL (Surat Keterangan Lulus) saat ini belum tersedia. Silakan cek secara berkala.
+                File SKL (Surat Keterangan Lulus) saat ini belum tersedia untuk diunduh. Silakan cek secara berkala atau hubungi pihak sekolah.
             </p>
             <button onclick="closeDownloadModal()" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2.5 px-4 rounded-lg transition duration-200">
                 Mengerti
@@ -189,128 +229,140 @@
         </div>
     </div>
 
-    <!-- JAVASCRIPT LOGIC -->
     <script>
-        // 1. DATA DATABASE (SIMULASI)
-        // Nanti bagian ini bisa diganti dengan fetch() ke Google Sheets
-        // Format Data: NISN (Key) -> Object Siswa
-        const databaseSiswa = {
-            "0012345678": {
-                nama: "BUDI SANTOSO",
-                nisn: "0012345678",
-                status: "LULUS",
-                nilai: {
-                    agama: 85,
-                    pancasila: 88,
-                    indo: 90,
-                    matematika: 78,
-                    ipa: 82,
-                    ips: 85,
-                    inggris: 80,
-                    penjas: 92,
-                    informatika: 88,
-                    seni: 86,
-                    mulok: 90 // Budaya Melayu Riau
-                }
-            },
-            "0087654321": {
-                nama: "SITI AMINAH",
-                nisn: "0087654321",
-                status: "LULUS",
-                nilai: {
-                    agama: 92,
-                    pancasila: 90,
-                    indo: 95,
-                    matematika: 88,
-                    ipa: 90,
-                    ips: 88,
-                    inggris: 94,
-                    penjas: 85,
-                    informatika: 90,
-                    seni: 88,
-                    mulok: 95
-                }
-            },
-            "1234567890": {
-                nama: "ANDI PRATAMA (Contoh Tidak Lulus)",
-                nisn: "1234567890",
-                status: "DITUNDA", // Bisa LULUS, TIDAK LULUS, DITUNDA
-                nilai: {
-                    agama: 70, pancasila: 70, indo: 70, matematika: 40, 
-                    ipa: 50, ips: 60, inggris: 50, penjas: 75, 
-                    informatika: 60, seni: 70, mulok: 75
-                }
-            }
-        };
+        // ==========================================
+        // KONFIGURASI INTEGRASI GOOGLE SHEET
+        // ==========================================
+        
+        // PASTE URL Web App Google Script Anda di bawah ini
+        const GOOGLE_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbwBoL1YbLcaJDQxpHgrubfknI0Pv0VLlmN9HoRQN-nLdq50YMMuOWZpBYbot1Q0N9lo/exec'; 
+        
+        // ==========================================
 
-        // Daftar Mata Pelajaran untuk Mapping ke Tabel
+        let databaseSiswa = [];
+
+        // Konfigurasi Mapping kolom Sheet ke Tampilan
+        // KUNCI (key) di bawah harus SAMA PERSIS dengan HEADER di Google Sheet Anda
         const mapelConfig = [
-            { id: 'agama', label: 'Pendidikan Agama dan Budi Pekerti' },
-            { id: 'pancasila', label: 'Pendidikan Pancasila' },
-            { id: 'indo', label: 'Bahasa Indonesia' },
-            { id: 'matematika', label: 'Matematika' },
-            { id: 'ipa', label: 'Ilmu Pengetahuan Alam (IPA)' },
-            { id: 'ips', label: 'Ilmu Pengetahuan Sosial (IPS)' },
-            { id: 'inggris', label: 'Bahasa Inggris' },
-            { id: 'penjas', label: 'PJOK' },
-            { id: 'informatika', label: 'Informatika' },
-            { id: 'seni', label: 'Seni Budaya' },
-            { id: 'mulok', label: 'Muatan Lokal (Budaya Melayu Riau)' }
+            { key: 'Pendidikan Agama', label: 'Pendidikan Agama dan Budi Pekerti' },
+            { key: 'Pendidikan Pancasila', label: 'Pendidikan Pancasila' },
+            { key: 'Bahasa Indonesia', label: 'Bahasa Indonesia' },
+            { key: 'Matematika', label: 'Matematika' },
+            { key: 'Ilmu Pengetahuan Alam', label: 'Ilmu Pengetahuan Alam (IPA)' },
+            { key: 'Ilmu Pengetahuan Sosial', label: 'Ilmu Pengetahuan Sosial (IPS)' },
+            { key: 'Bahasa Inggris', label: 'Bahasa Inggris' },
+            { key: 'Pendidikan Jasmani Olahraga dan Kesehatan', label: 'PJOK' },
+            { key: 'Informatika', label: 'Informatika' },
+            { key: 'Budaya Melayu', label: 'Muatan Lokal (Budaya Melayu Riau)' },
+            { key: 'Seni', label: 'Seni Budaya' },
+            { key: 'Prakarya', label: 'Prakarya' }
         ];
 
-        // Set Tanggal Hari Ini
         const options = { year: 'numeric', month: 'long', day: 'numeric' };
         document.getElementById('currentDate').innerText = new Date().toLocaleDateString('id-ID', options);
 
-        // Fungsi Cek Kelulusan
+        window.onload = function() {
+            if(GOOGLE_SCRIPT_URL === '') {
+                console.warn("URL Google Script belum diisi.");
+                // Dummy data disesuaikan dengan struktur baru untuk testing
+                databaseSiswa = [{
+                    "NISN": "0012345678", "NAMA": "Siswa Demo", "Status": "LULUS",
+                    "Pendidikan Agama": 85, "Pendidikan Pancasila": 80, "Bahasa Indonesia": 82,
+                    "Matematika": 75, "Ilmu Pengetahuan Alam": 78, "Ilmu Pengetahuan Sosial": 80,
+                    "Bahasa Inggris": 76, "Pendidikan Jasmani Olahraga dan Kesehatan": 85,
+                    "Informatika": 80, "Budaya Melayu": 88, "Seni": 85, "Prakarya": 82,
+                    "JUMLAH": 990, "RATA": 82.5, "Peringkat": "1 dari 100", "Foto": "" 
+                }];
+                activateForm();
+            } else {
+                fetchDataFromSheet();
+            }
+        };
+
+        function fetchDataFromSheet() {
+            const loading = document.getElementById('loadingData');
+            loading.classList.remove('hidden');
+
+            fetch(GOOGLE_SCRIPT_URL)
+                .then(response => response.json())
+                .then(data => {
+                    databaseSiswa = data;
+                    loading.classList.add('hidden');
+                    activateForm();
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                    loading.innerHTML = '<span class="text-red-500">Gagal mengambil data.</span>';
+                });
+        }
+
+        function activateForm() {
+            document.getElementById('nisnInput').disabled = false;
+            document.getElementById('nisnInput').placeholder = "Data Siap. Masukkan NISN";
+            document.getElementById('btnSearch').disabled = false;
+            document.getElementById('btnReset').disabled = false;
+            document.getElementById('nisnInput').focus();
+        }
+
         function handleSearch(event) {
             event.preventDefault();
-            const nisn = document.getElementById('nisnInput').value.trim();
-            const errorBox = document.getElementById('errorMessage');
-            const searchSection = document.getElementById('searchSection');
-            const resultSection = document.getElementById('resultSection');
-
-            // Validasi Input
-            if (nisn.length !== 10 || isNaN(nisn)) {
-                showError("Mohon masukkan 10 digit NISN dengan benar.");
-                return;
-            }
-
-            // Cek Data
-            // NOTE: Di sini nanti Anda bisa ganti dengan logika mencari di array Google Sheets
-            const siswa = databaseSiswa[nisn];
+            const inputVal = document.getElementById('nisnInput').value.trim();
+            
+            // Mencari siswa. Perhatikan kunci 'NISN' harus sama dengan header di Sheet
+            const siswa = databaseSiswa.find(s => String(s['NISN']) === inputVal);
 
             if (siswa) {
-                // Sembunyikan Form, Tampilkan Hasil
-                errorBox.classList.add('hidden');
-                searchSection.classList.add('hidden');
-                resultSection.classList.remove('hidden');
+                document.getElementById('errorMessage').classList.add('hidden');
+                document.getElementById('searchSection').classList.add('hidden');
+                document.getElementById('resultSection').classList.remove('hidden');
 
-                // Isi Data Siswa
-                document.getElementById('resName').innerText = siswa.nama;
-                document.getElementById('resNisn').innerText = siswa.nisn;
-
-                // Set Status Badge
-                const badge = document.getElementById('statusBadge');
-                badge.className = "inline-block px-8 py-3 rounded-full text-xl font-bold tracking-widest shadow-md text-white ";
+                // Isi Data Header
+                document.getElementById('resName').innerText = siswa['NAMA'];
+                document.getElementById('resNisn').innerText = siswa['NISN'];
+                document.getElementById('resRank').innerText = siswa['Peringkat'] || "-";
                 
-                if(siswa.status === "LULUS") {
+                // Isi Foto
+                const imgEl = document.getElementById('resFoto');
+                const noFotoEl = document.getElementById('noFoto');
+                if (siswa['Foto'] && siswa['Foto'].length > 10) {
+                    imgEl.src = siswa['Foto'];
+                    imgEl.classList.remove('hidden');
+                    noFotoEl.classList.add('hidden');
+                } else {
+                    imgEl.classList.add('hidden');
+                    noFotoEl.classList.remove('hidden');
+                }
+
+                // Status Badge
+                const badge = document.getElementById('statusBadge');
+                const status = (siswa['Status'] || "").toUpperCase();
+                badge.className = "inline-block px-6 py-2 rounded-full text-lg font-bold tracking-widest shadow-sm text-white ";
+                
+                if(status.includes("LULUS") && !status.includes("TIDAK")) {
                     badge.classList.add("bg-green-600");
                     badge.innerText = "LULUS";
-                } else if (siswa.status === "TIDAK LULUS") {
+                } else if (status.includes("TIDAK")) {
                     badge.classList.add("bg-red-600");
                     badge.innerText = "TIDAK LULUS";
                 } else {
                     badge.classList.add("bg-yellow-500");
-                    badge.innerText = "DITUNDA / HUBUNGI SEKOLAH";
+                    badge.innerText = "DITUNDA";
                 }
 
-                // Render Tabel Nilai
+                // Render Nilai
                 const tbody = document.getElementById('gradesTableBody');
-                tbody.innerHTML = ''; // Reset isi tabel
+                tbody.innerHTML = '';
 
                 mapelConfig.forEach((mapel, index) => {
-                    const nilai = siswa.nilai[mapel.id] || "-";
+                    // Ambil nilai berdasarkan Key yang sama persis dengan Header Sheet
+                    let nilai = siswa[mapel.key];
+                    // Format angka desimal 2 digit jika perlu
+                    if (typeof nilai === 'number') {
+                        nilai = nilai.toFixed(2);
+                    } else if (!nilai) {
+                        nilai = "-";
+                    }
+
                     const row = `
                         <tr class="bg-white border-b hover:bg-gray-50">
                             <td class="px-4 py-3 text-center font-medium text-gray-900">${index + 1}</td>
@@ -321,8 +373,16 @@
                     tbody.innerHTML += row;
                 });
 
+                // Total & Rata-rata
+                let total = siswa['JUMLAH'];
+                let rata = siswa['RATA'];
+                
+                // Formatting angka
+                document.getElementById('resTotal').innerText = (typeof total === 'number') ? total.toFixed(2) : (total || "0");
+                document.getElementById('resAvg').innerText = (typeof rata === 'number') ? rata.toFixed(2) : (rata || "0");
+
             } else {
-                showError("NISN tidak ditemukan dalam database kelulusan.");
+                showError("NISN tidak ditemukan dalam database.");
             }
         }
 
@@ -330,7 +390,6 @@
             const errorBox = document.getElementById('errorMessage');
             document.getElementById('errorText').innerText = msg;
             errorBox.classList.remove('hidden');
-            // Shake animation effect
             const input = document.getElementById('nisnInput');
             input.classList.add('border-red-500');
             setTimeout(() => input.classList.remove('border-red-500'), 2000);
@@ -344,39 +403,12 @@
             document.getElementById('nisnInput').focus();
         }
 
-        // Logic Modal Download
-        function showDownloadModal() {
-            document.getElementById('downloadModal').classList.remove('hidden');
-        }
-
-        function closeDownloadModal() {
-            document.getElementById('downloadModal').classList.add('hidden');
-        }
-
-        // Close modal when clicking outside
+        function showDownloadModal() { document.getElementById('downloadModal').classList.remove('hidden'); }
+        function closeDownloadModal() { document.getElementById('downloadModal').classList.add('hidden'); }
         window.onclick = function(event) {
             const modal = document.getElementById('downloadModal');
-            if (event.target == modal) {
-                closeDownloadModal();
-            }
+            if (event.target == modal) closeDownloadModal();
         }
-
-        // Auto focus on load
-        window.onload = function() {
-            document.getElementById('nisnInput').focus();
-        };
-
-        /* * CATATAN UNTUK INTEGRASI GOOGLE SHEET KEDEPANNYA:
-         * * 1. Buat Google Apps Script (DoGet) yang me-return JSON dari Sheet Anda.
-         * 2. Ubah const databaseSiswa menjadi array kosong [].
-         * 3. Saat halaman load, fetch() data JSON tersebut dan simpan ke variabel.
-         * * Contoh Fetch Code nanti:
-         * let dataSiswaRemote = [];
-         * fetch('URL_GOOGLE_SCRIPT_MACRO_ANDA')
-         * .then(res => res.json())
-         * .then(data => { dataSiswaRemote = data; });
-         * * Lalu di fungsi handleSearch, Anda cari di dataSiswaRemote menggunakan .find().
-         */
     </script>
 </body>
 </html>
