@@ -69,8 +69,40 @@
             <div class="absolute bottom-0 left-0 w-full h-1 bg-yellow-400"></div>
         </div>
 
+        <!-- Bagian Hitung Mundur (Awalnya Sembunyi) -->
+        <div id="countdownSection" class="p-8 md:p-12 text-center hidden no-print bg-white fade-in">
+            <h2 class="text-2xl font-bold text-gray-800 mb-2">Pengumuman Belum Dibuka</h2>
+            <p class="text-gray-600 mb-8">Silakan kembali lagi saat waktu hitung mundur di bawah ini selesai.</p>
+            
+            <div class="flex justify-center gap-4 text-center">
+                <div class="bg-blue-50 border border-blue-100 rounded-xl p-4 w-20 md:w-24 shadow-sm">
+                    <div id="cd-days" class="text-3xl md:text-4xl font-bold text-blue-700">00</div>
+                    <div class="text-xs md:text-sm text-blue-600 font-semibold uppercase mt-1">Hari</div>
+                </div>
+                <div class="bg-blue-50 border border-blue-100 rounded-xl p-4 w-20 md:w-24 shadow-sm">
+                    <div id="cd-hours" class="text-3xl md:text-4xl font-bold text-blue-700">00</div>
+                    <div class="text-xs md:text-sm text-blue-600 font-semibold uppercase mt-1">Jam</div>
+                </div>
+                <div class="bg-blue-50 border border-blue-100 rounded-xl p-4 w-20 md:w-24 shadow-sm">
+                    <div id="cd-minutes" class="text-3xl md:text-4xl font-bold text-blue-700">00</div>
+                    <div class="text-xs md:text-sm text-blue-600 font-semibold uppercase mt-1">Menit</div>
+                </div>
+                <div class="bg-blue-50 border border-blue-100 rounded-xl p-4 w-20 md:w-24 shadow-sm">
+                    <div id="cd-seconds" class="text-3xl md:text-4xl font-bold text-blue-700">00</div>
+                    <div class="text-xs md:text-sm text-blue-600 font-semibold uppercase mt-1">Detik</div>
+                </div>
+            </div>
+            
+            <div class="mt-8 pt-6 border-t border-gray-100">
+                <p class="text-sm text-gray-500 font-medium">
+                    <i class="far fa-calendar-alt mr-2 text-blue-500"></i>
+                    Waktu Pengumuman: <span id="targetTimeDisplay" class="font-bold text-gray-700"></span>
+                </p>
+            </div>
+        </div>
+
         <!-- Form Input -->
-        <div class="p-8 no-print" id="searchSection">
+        <div class="p-8 no-print hidden" id="searchSection">
             <div class="text-center mb-6">
                 <h2 class="text-gray-700 font-semibold text-lg">Cek Status Kelulusan</h2>
                 <p class="text-gray-500 text-sm">Masukkan NISN Anda</p>
@@ -199,6 +231,7 @@
                     <button onclick="showDownloadModal()" class="bg-blue-600 hover:bg-blue-700 text-white font-semibold py-3 px-6 rounded-lg transition shadow flex items-center justify-center">
                         <i class="fas fa-file-download mr-2"></i> Download SKL
                     </button>
+                    <!-- Tombol Kembali memanggil resetApp() yang kini tidak me-reload halaman -->
                     <button onclick="resetApp()" class="bg-gray-600 hover:bg-gray-700 text-white font-semibold py-3 px-6 rounded-lg transition shadow flex items-center justify-center">
                         <i class="fas fa-arrow-left mr-2"></i> Kembali
                     </button>
@@ -231,18 +264,26 @@
 
     <script>
         // ==========================================
-        // KONFIGURASI INTEGRASI GOOGLE SHEET
+        // KONFIGURASI PENGUMUMAN & DATABASE
         // ==========================================
         
-        // PASTE URL Web App Google Script Anda di bawah ini
+        // 1. SET WAKTU PENGUMUMAN (Format ISO: YYYY-MM-DDTHH:mm:ss+07:00)
+        // Gunakan +07:00 untuk Waktu Indonesia Barat (WIB)
+        const WAKTU_PENGUMUMAN = "2026-02-20T10:00:00+07:00"; 
+        
+        // 2. URL Web App Google Script
         const GOOGLE_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbwBoL1YbLcaJDQxpHgrubfknI0Pv0VLlmN9HoRQN-nLdq50YMMuOWZpBYbot1Q0N9lo/exec'; 
         
         // ==========================================
 
         let databaseSiswa = [];
+        const TARGET_DATE = new Date(WAKTU_PENGUMUMAN).getTime();
 
-        // Konfigurasi Mapping kolom Sheet ke Tampilan
-        // KUNCI (key) di bawah harus SAMA PERSIS dengan HEADER di Google Sheet Anda
+        // Tampilkan teks tanggal target di UI Countdown
+        const targetDateObj = new Date(WAKTU_PENGUMUMAN);
+        const formatOptions = { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric', hour: '2-digit', minute:'2-digit' };
+        document.getElementById('targetTimeDisplay').innerText = targetDateObj.toLocaleDateString('id-ID', formatOptions) + " WIB";
+
         const mapelConfig = [
             { key: 'Pendidikan Agama', label: 'Pendidikan Agama dan Budi Pekerti' },
             { key: 'Pendidikan Pancasila', label: 'Pendidikan Pancasila' },
@@ -258,13 +299,62 @@
             { key: 'Prakarya', label: 'Prakarya' }
         ];
 
+        // Format tanggal hari ini (untuk footer surat)
         const options = { year: 'numeric', month: 'long', day: 'numeric' };
         document.getElementById('currentDate').innerText = new Date().toLocaleDateString('id-ID', options);
 
+        // Saat halaman dimuat
         window.onload = function() {
+            checkCountdown();
+        };
+
+        // Logika Hitung Mundur
+        function checkCountdown() {
+            const now = new Date().getTime();
+            const distance = TARGET_DATE - now;
+
+            if (distance > 0) {
+                // Waktu belum tercapai, tampilkan countdown
+                document.getElementById('countdownSection').classList.remove('hidden');
+                document.getElementById('searchSection').classList.add('hidden');
+
+                const timerInterval = setInterval(function() {
+                    const currentTime = new Date().getTime();
+                    const diff = TARGET_DATE - currentTime;
+
+                    if (diff <= 0) {
+                        clearInterval(timerInterval);
+                        // Waktu Tercapai! Sembunyikan countdown, jalankan initData
+                        document.getElementById('countdownSection').classList.add('hidden');
+                        document.getElementById('searchSection').classList.remove('hidden');
+                        initData(); 
+                    } else {
+                        // Kalkulasi hari, jam, menit, detik
+                        const days = Math.floor(diff / (1000 * 60 * 60 * 24));
+                        const hours = Math.floor((diff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+                        const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
+                        const seconds = Math.floor((diff % (1000 * 60)) / 1000);
+
+                        // Update DOM
+                        document.getElementById('cd-days').innerText = days.toString().padStart(2, '0');
+                        document.getElementById('cd-hours').innerText = hours.toString().padStart(2, '0');
+                        document.getElementById('cd-minutes').innerText = minutes.toString().padStart(2, '0');
+                        document.getElementById('cd-seconds').innerText = seconds.toString().padStart(2, '0');
+                    }
+                }, 1000);
+            } else {
+                // Waktu sudah lewat sejak awal, langsung tampilkan form pencarian
+                document.getElementById('countdownSection').classList.add('hidden');
+                document.getElementById('searchSection').classList.remove('hidden');
+                initData();
+            }
+        }
+
+        // Inisialisasi Pengambilan Data
+        function initData() {
             if(GOOGLE_SCRIPT_URL === '') {
                 console.warn("URL Google Script belum diisi.");
-                // Dummy data disesuaikan dengan struktur baru untuk testing
+                // Dummy data
                 databaseSiswa = [{
                     "NISN": "0012345678", "NAMA": "Siswa Demo", "Status": "LULUS",
                     "Pendidikan Agama": 85, "Pendidikan Pancasila": 80, "Bahasa Indonesia": 82,
@@ -277,7 +367,7 @@
             } else {
                 fetchDataFromSheet();
             }
-        };
+        }
 
         function fetchDataFromSheet() {
             const loading = document.getElementById('loadingData');
@@ -308,7 +398,6 @@
             event.preventDefault();
             const inputVal = document.getElementById('nisnInput').value.trim();
             
-            // Mencari siswa. Perhatikan kunci 'NISN' harus sama dengan header di Sheet
             const siswa = databaseSiswa.find(s => String(s['NISN']) === inputVal);
 
             if (siswa) {
@@ -354,9 +443,7 @@
                 tbody.innerHTML = '';
 
                 mapelConfig.forEach((mapel, index) => {
-                    // Ambil nilai berdasarkan Key yang sama persis dengan Header Sheet
                     let nilai = siswa[mapel.key];
-                    // Format angka desimal 2 digit jika perlu
                     if (typeof nilai === 'number') {
                         nilai = nilai.toFixed(2);
                     } else if (!nilai) {
@@ -376,8 +463,6 @@
                 // Total & Rata-rata
                 let total = siswa['JUMLAH'];
                 let rata = siswa['RATA'];
-                
-                // Formatting angka
                 document.getElementById('resTotal').innerText = (typeof total === 'number') ? total.toFixed(2) : (total || "0");
                 document.getElementById('resAvg').innerText = (typeof rata === 'number') ? rata.toFixed(2) : (rata || "0");
 
@@ -395,8 +480,21 @@
             setTimeout(() => input.classList.remove('border-red-500'), 2000);
         }
 
+        // Fungsi Kembali kini hanya mengembalikan DOM seperti semula (tanpa reload)
         function resetApp() {
-            window.location.reload();
+            // Kosongkan form input
+            const form = document.getElementById('checkForm');
+            if (form) form.reset();
+            
+            // Sembunyikan error jika ada
+            document.getElementById('errorMessage').classList.add('hidden');
+            
+            // Tampilkan kembali bagian pencarian dan sembunyikan hasil
+            document.getElementById('resultSection').classList.add('hidden');
+            document.getElementById('searchSection').classList.remove('hidden');
+            
+            // Berikan fokus kembali ke input NISN
+            document.getElementById('nisnInput').focus();
         }
 
         function showDownloadModal() { document.getElementById('downloadModal').classList.remove('hidden'); }
