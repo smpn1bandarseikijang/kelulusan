@@ -269,7 +269,7 @@
         
         // 1. SET WAKTU PENGUMUMAN (Format ISO: YYYY-MM-DDTHH:mm:ss+07:00)
         // Gunakan +07:00 untuk Waktu Indonesia Barat (WIB)
-        const WAKTU_PENGUMUMAN = "2026-02-20T23:00:00+07:00"; 
+        const WAKTU_PENGUMUMAN = "2026-02-20T10:00:00+07:00"; 
         
         // 2. URL Web App Google Script
         const GOOGLE_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbwBoL1YbLcaJDQxpHgrubfknI0Pv0VLlmN9HoRQN-nLdq50YMMuOWZpBYbot1Q0N9lo/exec'; 
@@ -394,6 +394,32 @@
             document.getElementById('nisnInput').focus();
         }
 
+        // Fungsi bantuan untuk mengubah link view Google Drive menjadi direct link
+        function convertDriveLink(url) {
+            if (!url) return "";
+            let fileId = "";
+            
+            // Cek format: https://drive.google.com/file/d/FILE_ID/view
+            const matchFileD = url.match(/\/file\/d\/([a-zA-Z0-9_-]+)/);
+            if (matchFileD) {
+                fileId = matchFileD[1];
+            } else {
+                // Cek format alternatif: ?id=FILE_ID
+                const matchId = url.match(/[?&]id=([a-zA-Z0-9_-]+)/);
+                if (matchId) {
+                    fileId = matchId[1];
+                }
+            }
+            
+            // Jika ID ketemu, ubah jadi direct link
+            if (fileId) {
+                return "https://drive.google.com/uc?export=view&id=" + fileId;
+            }
+            
+            // Kembalikan URL asli jika bukan link Drive
+            return url;
+        }
+
         function handleSearch(event) {
             event.preventDefault();
             const inputVal = document.getElementById('nisnInput').value.trim();
@@ -414,7 +440,8 @@
                 const imgEl = document.getElementById('resFoto');
                 const noFotoEl = document.getElementById('noFoto');
                 if (siswa['Foto'] && siswa['Foto'].length > 10) {
-                    imgEl.src = siswa['Foto'];
+                    // Gunakan fungsi convertDriveLink di sini
+                    imgEl.src = convertDriveLink(siswa['Foto']);
                     imgEl.classList.remove('hidden');
                     noFotoEl.classList.add('hidden');
                 } else {
