@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Pengumuman Kelulusan - SMPN 1 Bandar Seikijang</title>
+    <title>Uji Coba Pengumuman Kelulusan - SMPN 1 Bandar Seikijang</title>
     
     <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
@@ -152,7 +152,8 @@
                     <!-- Foto Siswa -->
                     <div class="w-full md:w-1/4 flex justify-center md:justify-start">
                         <div class="w-32 h-40 bg-gray-200 rounded-lg overflow-hidden shadow-md border border-gray-300">
-                            <img id="resFoto" src="" alt="Foto Siswa" class="w-full h-full object-cover hidden">
+                            <!-- referrerpolicy="no-referrer" ditambahkan untuk bypass beberapa blokir browser tambahan -->
+                            <img id="resFoto" src="" alt="Foto Siswa" class="w-full h-full object-cover hidden" referrerpolicy="no-referrer">
                             <div id="noFoto" class="w-full h-full flex items-center justify-center text-gray-400 flex-col">
                                 <i class="fas fa-user text-4xl mb-2"></i>
                                 <span class="text-xs">No Photo</span>
@@ -394,7 +395,7 @@
             document.getElementById('nisnInput').focus();
         }
 
-        // Fungsi bantuan untuk mengubah link view Google Drive menjadi direct link
+        // Fungsi bantuan untuk mengubah link Google Drive menjadi direct link menggunakan CDN lh3
         function convertDriveLink(url) {
             if (!url) return "";
             let fileId = "";
@@ -411,9 +412,9 @@
                 }
             }
             
-            // Jika ID ketemu, ubah jadi direct link
+            // Jika ID ketemu, gunakan server CDN Google khusus gambar agar tidak terblokir (CORS bypass)
             if (fileId) {
-                return "https://drive.google.com/uc?export=view&id=" + fileId;
+                return "https://lh3.googleusercontent.com/d/" + fileId;
             }
             
             // Kembalikan URL asli jika bukan link Drive
