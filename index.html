@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Uji Coba Pengumuman Kelulusan - SMPN 1 Bandar Seikijang</title>
+    <title>Pengumuman Kelulusan - SMPN 1 Bandar Seikijang</title>
     
     <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
@@ -167,12 +167,12 @@
                             <p class="text-sm text-gray-500 uppercase tracking-wide">Nama Peserta Didik</p>
                             <h2 class="text-2xl font-bold text-gray-800 mb-2" id="resName">Nama Siswa</h2>
                             
-                            <div class="grid grid-cols-2 gap-4 mt-2">
+                            <div class="grid grid-cols-2 gap-4 mt-2" id="resDetailsGrid">
                                 <div>
                                     <p class="text-xs text-gray-500 uppercase">NISN</p>
                                     <p class="text-lg font-mono font-semibold text-gray-700" id="resNisn">0000000000</p>
                                 </div>
-                                <div>
+                                <div id="rankContainer">
                                     <p class="text-xs text-gray-500 uppercase">Peringkat Umum</p>
                                     <p class="text-lg font-bold text-blue-600" id="resRank">-</p>
                                 </div>
@@ -189,9 +189,16 @@
                     </div>
                 </div>
 
+                <!-- Pesan Tidak Lulus (Awalnya Hidden) -->
+                <div id="tidakLulusMessage" class="hidden mb-6 p-6 bg-red-50 border border-red-200 rounded-xl text-center fade-in">
+                    <i class="fas fa-exclamation-triangle text-4xl text-red-500 mb-3"></i>
+                    <h3 class="text-xl font-bold text-red-700 mb-2">Mohon Maaf, Anda Dinyatakan Tidak Lulus.</h3>
+                    <p class="text-gray-700 text-sm">Tetap semangat dan jangan menyerah. Silakan hubungi pihak sekolah untuk informasi lebih lanjut mengenai langkah selanjutnya.</p>
+                </div>
+
                 <!-- Tabel Nilai -->
-                <div class="overflow-x-auto mb-6">
-                    <h3 class="text-md font-bold text-gray-700 mb-3 border-l-4 border-blue-600 pl-2">Daftar Nilai Ujian Sekolah</h3>
+                <div class="overflow-x-auto mb-6" id="gradesSection">
+                    <h3 class="text-md font-bold text-gray-700 mb-3 border-l-4 border-blue-600 pl-2">Daftar Nilai Ijazah</h3>
                     <table class="w-full text-sm text-left text-gray-600 border border-gray-200">
                         <thead class="text-xs text-gray-700 uppercase bg-blue-50">
                             <tr>
@@ -218,7 +225,7 @@
 
                 <!-- Footer Surat -->
                 <div class="mt-8 pt-6 border-t border-gray-200 text-center md:text-right">
-                    <p class="text-sm text-gray-600 mb-1">Bandar Seikijang, <span id="currentDate"></span></p>
+                    <p class="text-sm text-gray-600 mb-1">Bandar Seikijang, <span>8 Juni 2026</span></p>
                     <p class="text-sm text-gray-600">Kepala Sekolah,</p>
                     <div class="h-20 flex items-center justify-center md:justify-end">
                         <div class="text-xs text-gray-400 italic">[Tanda Tangan Elektronik]</div>
@@ -300,9 +307,9 @@
             { key: 'Prakarya', label: 'Prakarya' }
         ];
 
-        // Format tanggal hari ini (untuk footer surat)
-        const options = { year: 'numeric', month: 'long', day: 'numeric' };
-        document.getElementById('currentDate').innerText = new Date().toLocaleDateString('id-ID', options);
+        // Format tanggal hari ini (dihapus karena menggunakan tanggal statis)
+        // const options = { year: 'numeric', month: 'long', day: 'numeric' };
+        // document.getElementById('currentDate').innerText = new Date().toLocaleDateString('id-ID', options);
 
         // Saat halaman dimuat
         window.onload = function() {
@@ -435,8 +442,46 @@
                 // Isi Data Header
                 document.getElementById('resName').innerText = siswa['NAMA'];
                 document.getElementById('resNisn').innerText = siswa['NISN'];
-                document.getElementById('resRank').innerText = siswa['Peringkat'] || "-";
                 
+                const rankContainer = document.getElementById('rankContainer');
+                const gradesSection = document.getElementById('gradesSection');
+                const tidakLulusMessage = document.getElementById('tidakLulusMessage');
+
+                // Reset visibility message
+                tidakLulusMessage.classList.add('hidden');
+
+                // Status Badge & Logika Tampilan Berdasarkan Status
+                const badge = document.getElementById('statusBadge');
+                const status = (siswa['Status'] || "").toUpperCase();
+                badge.className = "inline-block px-6 py-2 rounded-full text-lg font-bold tracking-widest shadow-sm text-white ";
+                
+                if(status.includes("LULUS") && !status.includes("TIDAK")) {
+                    badge.classList.add("bg-green-600");
+                    badge.innerText = "LULUS";
+                    rankContainer.classList.remove('hidden');
+                    gradesSection.classList.remove('hidden');
+                    document.getElementById('resRank').innerText = siswa['Peringkat'] || "-";
+                } else if (status.includes("TIDAK")) {
+                    badge.classList.add("bg-red-600");
+                    badge.innerText = "TIDAK LULUS";
+                    // Sembunyikan peringkat dan nilai, munculkan pesan
+                    rankContainer.classList.add('hidden');
+                    gradesSection.classList.add('hidden');
+                    tidakLulusMessage.classList.remove('hidden');
+                } else if (status.includes("PROSES")) {
+                    badge.classList.add("bg-gray-500");
+                    badge.innerText = "PROSES";
+                    // Sembunyikan peringkat dan nilai
+                    rankContainer.classList.add('hidden');
+                    gradesSection.classList.add('hidden');
+                } else {
+                    badge.classList.add("bg-yellow-500");
+                    badge.innerText = status || "DITUNDA";
+                    rankContainer.classList.remove('hidden');
+                    gradesSection.classList.remove('hidden');
+                    document.getElementById('resRank').innerText = siswa['Peringkat'] || "-";
+                }
+
                 // Isi Foto
                 const imgEl = document.getElementById('resFoto');
                 const noFotoEl = document.getElementById('noFoto');
@@ -448,22 +493,6 @@
                 } else {
                     imgEl.classList.add('hidden');
                     noFotoEl.classList.remove('hidden');
-                }
-
-                // Status Badge
-                const badge = document.getElementById('statusBadge');
-                const status = (siswa['Status'] || "").toUpperCase();
-                badge.className = "inline-block px-6 py-2 rounded-full text-lg font-bold tracking-widest shadow-sm text-white ";
-                
-                if(status.includes("LULUS") && !status.includes("TIDAK")) {
-                    badge.classList.add("bg-green-600");
-                    badge.innerText = "LULUS";
-                } else if (status.includes("TIDAK")) {
-                    badge.classList.add("bg-red-600");
-                    badge.innerText = "TIDAK LULUS";
-                } else {
-                    badge.classList.add("bg-yellow-500");
-                    badge.innerText = "DITUNDA";
                 }
 
                 // Render Nilai
