@@ -33,13 +33,6 @@
             to { opacity: 1; transform: translateY(0); }
         }
         
-        @media print {
-            body { background-color: white; }
-            .no-print { display: none !important; }
-            .print-only { display: block !important; }
-            .break-before { page-break-before: always; }
-        }
-
         /* Loading Spinner */
         .loader {
             border: 3px solid #f3f3f3;
@@ -53,6 +46,75 @@
         @keyframes spin {
             0% { transform: rotate(0deg); }
             100% { transform: rotate(360deg); }
+        }
+
+        /* ==========================================
+           OPTIMASI CETAK (A4) 
+           ========================================== */
+        @media print {
+            @page {
+                size: A4;
+                margin: 1.5cm; /* Margin standar dokumen resmi */
+            }
+            body { 
+                background-color: white !important; 
+                -webkit-print-color-adjust: exact; 
+                print-color-adjust: exact;
+            }
+            
+            /* Sembunyikan elemen UI pencarian dan tombol */
+            .no-print { display: none !important; }
+            .print-only { display: block !important; }
+            
+            /* Reset Container Web agar full width seperti kertas */
+            .max-w-4xl { max-width: 100% !important; box-shadow: none !important; border-radius: 0 !important; }
+            body > .min-h-screen { min-height: auto !important; padding: 0 !important; display: block !important; }
+            
+            /* Ubah Header Web menjadi Kop Surat Resmi Hitam Putih/Bersih */
+            .school-header-bg {
+                background: transparent !important;
+                color: black !important;
+                padding: 0 0 10px 0 !important;
+                border-bottom: 3px solid black !important;
+                margin-bottom: 20px !important;
+            }
+            .school-header-bg h1 { color: black !important; font-size: 16pt !important; }
+            .school-header-bg p { color: black !important; font-size: 10pt !important; }
+            .school-header-bg .absolute { display: none !important; } /* Sembunyikan garis kuning bawah */
+            .school-header-bg img { height: 70px !important; margin-bottom: 5px !important; }
+            
+            /* Reset padding konten */
+            #resultSection > div { padding: 0 !important; }
+            
+            /* Layout Profil (Rapatkan Spasi) */
+            .border-dashed { border-bottom: 2px solid black !important; padding-bottom: 15px !important; margin-bottom: 15px !important; }
+            .gap-6 { gap: 15px !important; }
+            .w-32 { width: 3cm !important; } /* Ukuran pass foto 3x4 / 4x6 standar */
+            .h-40 { height: 4cm !important; }
+            h2#resName { font-size: 14pt !important; margin-bottom: 5px !important; }
+            
+            /* Format Badge Status untuk Cetak Hitam/Putih Elegan */
+            #statusBadge {
+                background-color: transparent !important;
+                border: 2px solid black !important;
+                color: black !important;
+                font-size: 14pt !important;
+                padding: 5px 25px !important;
+            }
+            
+            /* Optimasi Tabel Nilai */
+            table { font-size: 10pt !important; border-collapse: collapse !important; width: 100% !important; }
+            th, td { padding: 6px !important; border: 1px solid black !important; }
+            thead th, tfoot td { background-color: #f3f4f6 !important; color: black !important; }
+            h3 { border-color: black !important; } /* Ubah border kiri judul tabel */
+            
+            /* Spasi Footer Tanda Tangan */
+            .mt-8 { margin-top: 20px !important; }
+            .pt-6 { padding-top: 15px !important; border-top: none !important; }
+            
+            /* Hilangkan border/shadow pada foto saat cetak */
+            .shadow-md { box-shadow: none !important; }
+            .border-gray-300 { border-color: black !important; border-width: 1px !important; }
         }
     </style>
 </head>
@@ -269,7 +331,7 @@
         // ==========================================
         
         // 1. SET WAKTU PENGUMUMAN (Format ISO: YYYY-MM-DDTHH:mm:ss+07:00)
-        const WAKTU_PENGUMUMAN = "2026-06-01T16:00:00+07:00"; 
+        const WAKTU_PENGUMUMAN = "2026-06-02T04:55:00+07:00"; 
         
         // 2. URL Web App Google Script
         const GOOGLE_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbwBoL1YbLcaJDQxpHgrubfknI0Pv0VLlmN9HoRQN-nLdq50YMMuOWZpBYbot1Q0N9lo/exec'; 
