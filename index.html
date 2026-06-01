@@ -11,7 +11,7 @@
     <!-- Fonts -->
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&display=swap" rel="stylesheet">
     
-    <!-- Icons -->
+    <!-- Icons (Includes Solid and Brands for WhatsApp) -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 
     <!-- Canvas Confetti Library untuk Animasi Kelulusan -->
@@ -111,11 +111,11 @@
                 <p class="text-gray-500 text-sm">Masukkan NISN Anda</p>
             </div>
 
-            <!-- Loading Indicator -->
-            <div id="loadingData" class="text-center text-sm text-blue-600 mb-4 hidden">
-                <div class="flex justify-center items-center gap-2">
+            <!-- Loading Indicator (Updated for dynamic text) -->
+            <div id="loadingData" class="text-center text-sm text-blue-600 mb-4 hidden bg-blue-50 py-3 rounded-lg border border-blue-100">
+                <div class="flex justify-center items-center gap-3">
                     <div class="loader"></div>
-                    <span>Menghubungkan ke database sekolah...</span>
+                    <span id="loadingText" class="font-medium animate-pulse">Menghubungkan ke server sekolah...</span>
                 </div>
             </div>
 
@@ -237,6 +237,11 @@
 
                 <!-- Tombol Aksi -->
                 <div class="mt-8 flex flex-col sm:flex-row justify-center gap-4 no-print">
+                    <!-- Tombol WA Share (Sembunyi by default) -->
+                    <a id="btnWaShare" href="#" target="_blank" class="hidden bg-[#25D366] hover:bg-[#128C7E] text-white font-semibold py-3 px-6 rounded-lg transition shadow flex items-center justify-center">
+                        <i class="fab fa-whatsapp text-xl mr-2"></i> Bagikan
+                    </a>
+
                     <button onclick="window.print()" class="bg-blue-600 hover:bg-blue-700 text-white font-semibold py-3 px-6 rounded-lg transition shadow flex items-center justify-center">
                         <i class="fas fa-print mr-2"></i> Cetak
                     </button>
@@ -248,8 +253,13 @@
             </div>
         </div>
         
-        <div class="bg-gray-100 p-4 text-center text-xs text-gray-500 no-print">
-            Development By Andri F. &copy; 2026 SMPN 1 Bandar Seikijang. All Rights Reserved.
+        <!-- Update Footer: Menambahkan Visitor Counter -->
+        <div class="bg-gray-100 p-4 text-center text-xs text-gray-500 no-print border-t border-gray-200">
+            <p>Development By Andri F. &copy; 2026 SMPN 1 Bandar Seikijang. All Rights Reserved.</p>
+            <div class="mt-2 inline-flex items-center justify-center bg-gray-200 px-3 py-1 rounded-full text-gray-600 font-medium">
+                <i class="fas fa-chart-line mr-2 text-blue-500"></i>
+                Halaman ini telah dikunjungi: <span id="visitorCount" class="ml-1 font-bold text-blue-600">...</span> kali
+            </div>
         </div>
     </div>
 
@@ -291,7 +301,24 @@
         // Saat halaman dimuat
         window.onload = function() {
             checkCountdown();
+            hitVisitorCounter(); // Panggil fungsi counter saat load
         };
+
+        // Logika Visitor Counter (counterapi.dev)
+        function hitVisitorCounter() {
+            const counterEl = document.getElementById('visitorCount');
+            // Format API: api.counterapi.dev/v1/{namespace}/{key}/up
+            fetch('https://api.counterapi.dev/v1/smpn1bandarseikijang/kelulusan/up')
+                .then(response => response.json())
+                .then(data => {
+                    // Update DOM dengan angka dari server
+                    counterEl.innerText = data.count.toLocaleString('id-ID');
+                })
+                .catch(error => {
+                    console.error("Gagal memuat visitor counter:", error);
+                    counterEl.innerText = "-";
+                });
+        }
 
         // Logika Hitung Mundur
         function checkCountdown() {
@@ -314,13 +341,11 @@
                         document.getElementById('searchSection').classList.remove('hidden');
                         initData(); 
                     } else {
-                        // Kalkulasi hari, jam, menit, detik
                         const days = Math.floor(diff / (1000 * 60 * 60 * 24));
                         const hours = Math.floor((diff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
                         const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
                         const seconds = Math.floor((diff % (1000 * 60)) / 1000);
 
-                        // Update DOM
                         document.getElementById('cd-days').innerText = days.toString().padStart(2, '0');
                         document.getElementById('cd-hours').innerText = hours.toString().padStart(2, '0');
                         document.getElementById('cd-minutes').innerText = minutes.toString().padStart(2, '0');
@@ -328,11 +353,35 @@
                     }
                 }, 1000);
             } else {
-                // Waktu sudah lewat sejak awal, langsung tampilkan form pencarian
+                // Waktu sudah lewat, langsung tampilkan form pencarian
                 document.getElementById('countdownSection').classList.add('hidden');
                 document.getElementById('searchSection').classList.remove('hidden');
                 initData();
             }
+        }
+
+        // Variabel dan Fungsi untuk Animasi Loading Dinamis
+        let loadingInterval;
+        const loadingTexts = [
+            "Menghubungkan ke server pusat...", 
+            "Mengunduh data nilai siswa...", 
+            "Mensinkronisasi database...", 
+            "Harap tunggu sebentar..."
+        ];
+        
+        function startDynamicLoadingText() {
+            const textEl = document.getElementById('loadingText');
+            let index = 0;
+            // Ganti teks setiap 1.5 detik
+            loadingInterval = setInterval(() => {
+                index = (index + 1) % loadingTexts.length;
+                textEl.innerText = loadingTexts[index];
+            }, 1500);
+        }
+
+        function stopDynamicLoadingText() {
+            clearInterval(loadingInterval);
+            document.getElementById('loadingText').innerText = "Menghubungkan ke server sekolah..."; // reset
         }
 
         // Inisialisasi Pengambilan Data
@@ -351,10 +400,6 @@
                 {
                     "NISN": "0011223344", "NAMA": "Siswa Tidak Lulus", "Status": "TIDAK LULUS",
                     "Peringkat": "99 dari 100", "Foto": "" 
-                },
-                {
-                    "NISN": "0022334455", "NAMA": "Siswa Proses", "Status": "PROSES",
-                    "Foto": "" 
                 }];
                 activateForm();
             } else {
@@ -365,17 +410,23 @@
         function fetchDataFromSheet() {
             const loading = document.getElementById('loadingData');
             loading.classList.remove('hidden');
+            
+            // Mulai animasi teks berganti
+            startDynamicLoadingText();
 
             fetch(GOOGLE_SCRIPT_URL)
                 .then(response => response.json())
                 .then(data => {
                     databaseSiswa = data;
+                    stopDynamicLoadingText(); // Hentikan interval animasi teks
                     loading.classList.add('hidden');
                     activateForm();
                 })
                 .catch(error => {
                     console.error('Error:', error);
-                    loading.innerHTML = '<span class="text-red-500">Gagal mengambil data.</span>';
+                    stopDynamicLoadingText();
+                    document.getElementById('loadingText').classList.remove('animate-pulse');
+                    document.getElementById('loadingText').innerHTML = '<span class="text-red-500">Gagal mengambil data. Coba refresh halaman.</span>';
                 });
         }
 
@@ -391,7 +442,6 @@
         function convertDriveLink(url) {
             if (!url) return "";
             let fileId = "";
-            
             const matchFileD = url.match(/\/file\/d\/([a-zA-Z0-9_-]+)/);
             if (matchFileD) {
                 fileId = matchFileD[1];
@@ -401,7 +451,6 @@
                     fileId = matchId[1];
                 }
             }
-            
             if (fileId) {
                 return "https://lh3.googleusercontent.com/d/" + fileId;
             }
@@ -413,18 +462,10 @@
             var duration = 3 * 1000;
             var animationEnd = Date.now() + duration;
             var defaults = { startVelocity: 30, spread: 360, ticks: 60, zIndex: 0 };
-
-            function randomInRange(min, max) {
-              return Math.random() * (max - min) + min;
-            }
-
+            function randomInRange(min, max) { return Math.random() * (max - min) + min; }
             var interval = setInterval(function() {
                 var timeLeft = animationEnd - Date.now();
-
-                if (timeLeft <= 0) {
-                    return clearInterval(interval);
-                }
-
+                if (timeLeft <= 0) return clearInterval(interval);
                 var particleCount = 50 * (timeLeft / duration);
                 confetti(Object.assign({}, defaults, { particleCount, origin: { x: randomInRange(0.1, 0.3), y: Math.random() - 0.2 } }));
                 confetti(Object.assign({}, defaults, { particleCount, origin: { x: randomInRange(0.7, 0.9), y: Math.random() - 0.2 } }));
@@ -434,7 +475,6 @@
         function handleSearch(event) {
             event.preventDefault();
             const inputVal = document.getElementById('nisnInput').value.trim();
-            
             const siswa = databaseSiswa.find(s => String(s['NISN']) === inputVal);
 
             if (siswa) {
@@ -459,14 +499,16 @@
                     noFotoEl.classList.remove('hidden');
                 }
 
-                // Elemen-elemen yang perlu di-hide/show berdasarkan status
+                // Elemen DOM
                 const rankContainer = document.getElementById('rankContainer');
                 const gradesContainer = document.getElementById('gradesContainer');
                 const specialMessageContainer = document.getElementById('specialMessageContainer');
                 const badge = document.getElementById('statusBadge');
+                const waBtn = document.getElementById('btnWaShare');
 
-                // Reset Class Status Badge
+                // Reset Class Status Badge & Sembunyikan tombol WA Share
                 badge.className = "inline-block px-6 py-2 rounded-full text-lg font-bold tracking-widest shadow-sm text-white ";
+                waBtn.classList.add('hidden');
                 
                 // Ambil Status
                 const status = (siswa['Status'] || "").toUpperCase().trim();
@@ -481,6 +523,11 @@
                     specialMessageContainer.classList.add('hidden');
                     specialMessageContainer.innerHTML = '';
                     
+                    // Siapkan Link WhatsApp Share
+                    const waText = `Alhamdulillah, saya *${siswa['NAMA']}* dinyatakan *LULUS* dari SMPN 1 Bandar Seikijang! Terima kasih Bapak/Ibu Guru atas bimbingannya. 🎓✨`;
+                    waBtn.href = `https://api.whatsapp.com/send?text=${encodeURIComponent(waText)}`;
+                    waBtn.classList.remove('hidden'); // Munculkan tombol bagikan
+
                     // Trigger animasi letusan!
                     fireConfetti();
 
@@ -490,7 +537,7 @@
                     
                     rankContainer.classList.add('hidden');
                     gradesContainer.classList.add('hidden');
-                    specialMessageContainer.classList.add('hidden'); // Bisa ditampilkan jika butuh pesan khusus
+                    specialMessageContainer.classList.add('hidden'); 
 
                 } else if (status.includes("TIDAK")) {
                     badge.classList.add("bg-red-600");
@@ -507,9 +554,7 @@
                                     <i class="fas fa-exclamation-triangle text-red-600 text-2xl"></i>
                                 </div>
                                 <div class="ml-4">
-                                    <h3 class="text-lg leading-6 font-medium text-red-800">
-                                        Pemberitahuan
-                                    </h3>
+                                    <h3 class="text-lg leading-6 font-medium text-red-800">Pemberitahuan</h3>
                                     <div class="mt-1 text-sm text-red-700">
                                         <p>Mohon maaf, siswa yang bersangkutan dinyatakan <strong>TIDAK LULUS</strong>.</p>
                                     </div>
@@ -518,18 +563,16 @@
                         </div>
                     `;
                     specialMessageContainer.classList.remove('hidden');
-
                 } else {
                     // Default / Ditunda
                     badge.classList.add("bg-yellow-500");
                     badge.innerText = status || "DITUNDA";
-                    
                     rankContainer.classList.add('hidden');
                     gradesContainer.classList.add('hidden');
                     specialMessageContainer.classList.add('hidden');
                 }
 
-                // Render Nilai (Hanya jika tabelnya muncul / lulus)
+                // Render Nilai
                 if (status === "LULUS") {
                     const tbody = document.getElementById('gradesTableBody');
                     tbody.innerHTML = '';
@@ -552,7 +595,6 @@
                         tbody.innerHTML += row;
                     });
 
-                    // Total & Rata-rata
                     let total = siswa['JUMLAH'];
                     let rata = siswa['RATA'];
                     document.getElementById('resTotal').innerText = (typeof total === 'number') ? total.toFixed(2) : (total || "0");
@@ -574,18 +616,15 @@
         }
 
         function resetApp() {
-            // Kosongkan form input
             const form = document.getElementById('checkForm');
             if (form) form.reset();
             
-            // Sembunyikan error jika ada
             document.getElementById('errorMessage').classList.add('hidden');
+            document.getElementById('btnWaShare').classList.add('hidden'); // Sembunyikan lg tombol WA
             
-            // Tampilkan kembali bagian pencarian dan sembunyikan hasil
             document.getElementById('resultSection').classList.add('hidden');
             document.getElementById('searchSection').classList.remove('hidden');
             
-            // Berikan fokus kembali ke input NISN
             document.getElementById('nisnInput').focus();
         }
     </script>
