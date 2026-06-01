@@ -14,6 +14,9 @@
     <!-- Icons -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 
+    <!-- Canvas Confetti Library untuk Animasi Kelulusan -->
+    <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
+
     <style>
         body {
             font-family: 'Inter', sans-serif;
@@ -148,7 +151,7 @@
             <div class="p-6 md:p-8 fade-in">
                 
                 <!-- Header Profil Siswa -->
-                <div class="flex flex-col md:flex-row gap-6 mb-8 border-b-2 border-dashed border-gray-200 pb-6">
+                <div class="flex flex-col md:flex-row gap-6 mb-6 border-b-2 border-dashed border-gray-200 pb-6">
                     <!-- Foto Siswa -->
                     <div class="w-full md:w-1/4 flex justify-center md:justify-start">
                         <div class="w-32 h-40 bg-gray-200 rounded-lg overflow-hidden shadow-md border border-gray-300">
@@ -167,13 +170,13 @@
                             <p class="text-sm text-gray-500 uppercase tracking-wide">Nama Peserta Didik</p>
                             <h2 class="text-2xl font-bold text-gray-800 mb-2" id="resName">Nama Siswa</h2>
                             
-                            <div class="grid grid-cols-2 gap-4 mt-2" id="resDetailsGrid">
+                            <div class="grid grid-cols-2 gap-4 mt-2">
                                 <div>
                                     <p class="text-xs text-gray-500 uppercase">NISN</p>
                                     <p class="text-lg font-mono font-semibold text-gray-700" id="resNisn">0000000000</p>
                                 </div>
                                 <div id="rankContainer">
-                                    <p class="text-xs text-gray-500 uppercase">Peringkat Umum</p>
+                                    <p class="text-xs text-gray-500 uppercase">Peringkat Kelulusan</p>
                                     <p class="text-lg font-bold text-blue-600" id="resRank">-</p>
                                 </div>
                             </div>
@@ -189,15 +192,13 @@
                     </div>
                 </div>
 
-                <!-- Pesan Tidak Lulus (Awalnya Hidden) -->
-                <div id="tidakLulusMessage" class="hidden mb-6 p-6 bg-red-50 border border-red-200 rounded-xl text-center fade-in">
-                    <i class="fas fa-exclamation-triangle text-4xl text-red-500 mb-3"></i>
-                    <h3 class="text-xl font-bold text-red-700 mb-2">Mohon Maaf, Anda Dinyatakan Tidak Lulus.</h3>
-                    <p class="text-gray-700 text-sm">Tetap semangat dan jangan menyerah. Silakan hubungi pihak sekolah untuk informasi lebih lanjut mengenai langkah selanjutnya.</p>
+                <!-- Pesan Spesial (Digunakan jika status TIDAK LULUS atau PROSES) -->
+                <div id="specialMessageContainer" class="hidden mb-6">
+                    <!-- Pesan akan di-inject lewat JS -->
                 </div>
 
-                <!-- Tabel Nilai -->
-                <div class="overflow-x-auto mb-6" id="gradesSection">
+                <!-- Tabel Nilai (Bisa di-hide lewat JS) -->
+                <div id="gradesContainer" class="overflow-x-auto mb-6">
                     <h3 class="text-md font-bold text-gray-700 mb-3 border-l-4 border-blue-600 pl-2">Daftar Nilai Ijazah</h3>
                     <table class="w-full text-sm text-left text-gray-600 border border-gray-200">
                         <thead class="text-xs text-gray-700 uppercase bg-blue-50">
@@ -225,7 +226,7 @@
 
                 <!-- Footer Surat -->
                 <div class="mt-8 pt-6 border-t border-gray-200 text-center md:text-right">
-                    <p class="text-sm text-gray-600 mb-1">Bandar Seikijang, <span>8 Juni 2026</span></p>
+                    <p class="text-sm text-gray-600 mb-1">Bandar Seikijang, 2 Juni 2026</p>
                     <p class="text-sm text-gray-600">Kepala Sekolah,</p>
                     <div class="h-20 flex items-center justify-center md:justify-end">
                         <div class="text-xs text-gray-400 italic">[Tanda Tangan Elektronik]</div>
@@ -236,8 +237,8 @@
 
                 <!-- Tombol Aksi -->
                 <div class="mt-8 flex flex-col sm:flex-row justify-center gap-4 no-print">
-                    <button onclick="showDownloadModal()" class="bg-blue-600 hover:bg-blue-700 text-white font-semibold py-3 px-6 rounded-lg transition shadow flex items-center justify-center">
-                        <i class="fas fa-file-download mr-2"></i> Download SKL
+                    <button onclick="window.print()" class="bg-blue-600 hover:bg-blue-700 text-white font-semibold py-3 px-6 rounded-lg transition shadow flex items-center justify-center">
+                        <i class="fas fa-print mr-2"></i> Cetak
                     </button>
                     <!-- Tombol Kembali memanggil resetApp() yang kini tidak me-reload halaman -->
                     <button onclick="resetApp()" class="bg-gray-600 hover:bg-gray-700 text-white font-semibold py-3 px-6 rounded-lg transition shadow flex items-center justify-center">
@@ -252,31 +253,12 @@
         </div>
     </div>
 
-    <!-- Modal Notifikasi -->
-    <div id="downloadModal" class="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-60 hidden transition-opacity duration-300">
-        <div class="bg-white rounded-xl shadow-2xl p-6 max-w-sm w-full mx-4 transform transition-all scale-100 fade-in text-center relative">
-            <div class="mb-4">
-                <div class="w-16 h-16 bg-blue-100 rounded-full flex items-center justify-center mx-auto">
-                    <i class="fas fa-info text-2xl text-blue-600"></i>
-                </div>
-            </div>
-            <h3 class="text-xl font-bold text-gray-800 mb-2">Informasi</h3>
-            <p class="text-gray-600 mb-6 leading-relaxed">
-                File SKL (Surat Keterangan Lulus) saat ini belum tersedia untuk diunduh. Silakan cek secara berkala atau hubungi pihak sekolah.
-            </p>
-            <button onclick="closeDownloadModal()" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2.5 px-4 rounded-lg transition duration-200">
-                Mengerti
-            </button>
-        </div>
-    </div>
-
     <script>
         // ==========================================
         // KONFIGURASI PENGUMUMAN & DATABASE
         // ==========================================
         
         // 1. SET WAKTU PENGUMUMAN (Format ISO: YYYY-MM-DDTHH:mm:ss+07:00)
-        // Gunakan +07:00 untuk Waktu Indonesia Barat (WIB)
         const WAKTU_PENGUMUMAN = "2026-02-20T10:00:00+07:00"; 
         
         // 2. URL Web App Google Script
@@ -303,13 +285,8 @@
             { key: 'Pendidkan Jasmani Olahraga dan Kesehatan', label: 'PJOK' },
             { key: 'Informatika', label: 'Informatika' },
             { key: 'Budaya Melayu Riau', label: 'Muatan Lokal (Budaya Melayu Riau)' },
-            { key: 'Seni', label: 'Seni Budaya' },
-            { key: 'Prakarya', label: 'Prakarya' }
+            { key: 'Seni', label: 'Seni Budaya' }
         ];
-
-        // Format tanggal hari ini (dihapus karena menggunakan tanggal statis)
-        // const options = { year: 'numeric', month: 'long', day: 'numeric' };
-        // document.getElementById('currentDate').innerText = new Date().toLocaleDateString('id-ID', options);
 
         // Saat halaman dimuat
         window.onload = function() {
@@ -364,12 +341,20 @@
                 console.warn("URL Google Script belum diisi.");
                 // Dummy data
                 databaseSiswa = [{
-                    "NISN": "0012345678", "NAMA": "Siswa Demo", "Status": "LULUS",
+                    "NISN": "0012345678", "NAMA": "Siswa Lulus", "Status": "LULUS",
                     "Pendidikan Agama": 85, "Pendidikan Pancasila": 80, "Bahasa Indonesia": 82,
                     "Matematika": 75, "Ilmu Pengetahuan Alam": 78, "Ilmu Pengetahuan Sosial": 80,
                     "Bahasa Inggris": 76, "Pendidkan Jasmani Olahraga dan Kesehatan": 85,
-                    "Informatika": 80, "Budaya Melayu Riau": 88, "Seni": 85, "Prakarya": 82,
+                    "Informatika": 80, "Budaya Melayu Riau": 88, "Seni": 85,
                     "JUMLAH": 990, "RATA": 82.5, "Peringkat": "1 dari 100", "Foto": "" 
+                },
+                {
+                    "NISN": "0011223344", "NAMA": "Siswa Tidak Lulus", "Status": "TIDAK LULUS",
+                    "Peringkat": "99 dari 100", "Foto": "" 
+                },
+                {
+                    "NISN": "0022334455", "NAMA": "Siswa Proses", "Status": "PROSES",
+                    "Foto": "" 
                 }];
                 activateForm();
             } else {
@@ -407,25 +392,43 @@
             if (!url) return "";
             let fileId = "";
             
-            // Cek format: https://drive.google.com/file/d/FILE_ID/view
             const matchFileD = url.match(/\/file\/d\/([a-zA-Z0-9_-]+)/);
             if (matchFileD) {
                 fileId = matchFileD[1];
             } else {
-                // Cek format alternatif: ?id=FILE_ID
                 const matchId = url.match(/[?&]id=([a-zA-Z0-9_-]+)/);
                 if (matchId) {
                     fileId = matchId[1];
                 }
             }
             
-            // Jika ID ketemu, gunakan server CDN Google khusus gambar agar tidak terblokir (CORS bypass)
             if (fileId) {
                 return "https://lh3.googleusercontent.com/d/" + fileId;
             }
-            
-            // Kembalikan URL asli jika bukan link Drive
             return url;
+        }
+
+        // Fungsi Trigger Confetti
+        function fireConfetti() {
+            var duration = 3 * 1000;
+            var animationEnd = Date.now() + duration;
+            var defaults = { startVelocity: 30, spread: 360, ticks: 60, zIndex: 0 };
+
+            function randomInRange(min, max) {
+              return Math.random() * (max - min) + min;
+            }
+
+            var interval = setInterval(function() {
+                var timeLeft = animationEnd - Date.now();
+
+                if (timeLeft <= 0) {
+                    return clearInterval(interval);
+                }
+
+                var particleCount = 50 * (timeLeft / duration);
+                confetti(Object.assign({}, defaults, { particleCount, origin: { x: randomInRange(0.1, 0.3), y: Math.random() - 0.2 } }));
+                confetti(Object.assign({}, defaults, { particleCount, origin: { x: randomInRange(0.7, 0.9), y: Math.random() - 0.2 } }));
+            }, 250);
         }
 
         function handleSearch(event) {
@@ -439,54 +442,15 @@
                 document.getElementById('searchSection').classList.add('hidden');
                 document.getElementById('resultSection').classList.remove('hidden');
 
-                // Isi Data Header
+                // Isi Data Header Profile
                 document.getElementById('resName').innerText = siswa['NAMA'];
                 document.getElementById('resNisn').innerText = siswa['NISN'];
+                document.getElementById('resRank').innerText = siswa['Peringkat'] || "-";
                 
-                const rankContainer = document.getElementById('rankContainer');
-                const gradesSection = document.getElementById('gradesSection');
-                const tidakLulusMessage = document.getElementById('tidakLulusMessage');
-
-                // Reset visibility message
-                tidakLulusMessage.classList.add('hidden');
-
-                // Status Badge & Logika Tampilan Berdasarkan Status
-                const badge = document.getElementById('statusBadge');
-                const status = (siswa['Status'] || "").toUpperCase();
-                badge.className = "inline-block px-6 py-2 rounded-full text-lg font-bold tracking-widest shadow-sm text-white ";
-                
-                if(status.includes("LULUS") && !status.includes("TIDAK")) {
-                    badge.classList.add("bg-green-600");
-                    badge.innerText = "LULUS";
-                    rankContainer.classList.remove('hidden');
-                    gradesSection.classList.remove('hidden');
-                    document.getElementById('resRank').innerText = siswa['Peringkat'] || "-";
-                } else if (status.includes("TIDAK")) {
-                    badge.classList.add("bg-red-600");
-                    badge.innerText = "TIDAK LULUS";
-                    // Sembunyikan peringkat dan nilai, munculkan pesan
-                    rankContainer.classList.add('hidden');
-                    gradesSection.classList.add('hidden');
-                    tidakLulusMessage.classList.remove('hidden');
-                } else if (status.includes("PROSES")) {
-                    badge.classList.add("bg-gray-500");
-                    badge.innerText = "PROSES";
-                    // Sembunyikan peringkat dan nilai
-                    rankContainer.classList.add('hidden');
-                    gradesSection.classList.add('hidden');
-                } else {
-                    badge.classList.add("bg-yellow-500");
-                    badge.innerText = status || "DITUNDA";
-                    rankContainer.classList.remove('hidden');
-                    gradesSection.classList.remove('hidden');
-                    document.getElementById('resRank').innerText = siswa['Peringkat'] || "-";
-                }
-
-                // Isi Foto
+                // Cek URL Foto
                 const imgEl = document.getElementById('resFoto');
                 const noFotoEl = document.getElementById('noFoto');
                 if (siswa['Foto'] && siswa['Foto'].length > 10) {
-                    // Gunakan fungsi convertDriveLink di sini
                     imgEl.src = convertDriveLink(siswa['Foto']);
                     imgEl.classList.remove('hidden');
                     noFotoEl.classList.add('hidden');
@@ -495,33 +459,105 @@
                     noFotoEl.classList.remove('hidden');
                 }
 
-                // Render Nilai
-                const tbody = document.getElementById('gradesTableBody');
-                tbody.innerHTML = '';
+                // Elemen-elemen yang perlu di-hide/show berdasarkan status
+                const rankContainer = document.getElementById('rankContainer');
+                const gradesContainer = document.getElementById('gradesContainer');
+                const specialMessageContainer = document.getElementById('specialMessageContainer');
+                const badge = document.getElementById('statusBadge');
 
-                mapelConfig.forEach((mapel, index) => {
-                    let nilai = siswa[mapel.key];
-                    if (typeof nilai === 'number') {
-                        nilai = nilai.toFixed(2);
-                    } else if (!nilai) {
-                        nilai = "-";
-                    }
+                // Reset Class Status Badge
+                badge.className = "inline-block px-6 py-2 rounded-full text-lg font-bold tracking-widest shadow-sm text-white ";
+                
+                // Ambil Status
+                const status = (siswa['Status'] || "").toUpperCase().trim();
 
-                    const row = `
-                        <tr class="bg-white border-b hover:bg-gray-50">
-                            <td class="px-4 py-3 text-center font-medium text-gray-900">${index + 1}</td>
-                            <td class="px-4 py-3 text-gray-700">${mapel.label}</td>
-                            <td class="px-4 py-3 text-center font-bold text-gray-800">${nilai}</td>
-                        </tr>
+                // Logika Berdasarkan Status
+                if(status === "LULUS") {
+                    badge.classList.add("bg-green-600");
+                    badge.innerText = "LULUS";
+                    
+                    rankContainer.classList.remove('hidden');
+                    gradesContainer.classList.remove('hidden');
+                    specialMessageContainer.classList.add('hidden');
+                    specialMessageContainer.innerHTML = '';
+                    
+                    // Trigger animasi letusan!
+                    fireConfetti();
+
+                } else if (status === "PROSES") {
+                    badge.classList.add("bg-gray-500");
+                    badge.innerText = "PROSES";
+                    
+                    rankContainer.classList.add('hidden');
+                    gradesContainer.classList.add('hidden');
+                    specialMessageContainer.classList.add('hidden'); // Bisa ditampilkan jika butuh pesan khusus
+
+                } else if (status.includes("TIDAK")) {
+                    badge.classList.add("bg-red-600");
+                    badge.innerText = "TIDAK LULUS";
+                    
+                    rankContainer.classList.add('hidden');
+                    gradesContainer.classList.add('hidden');
+                    
+                    // Tampilkan pesan khusus
+                    specialMessageContainer.innerHTML = `
+                        <div class="bg-red-50 border-l-4 border-red-600 p-5 rounded-md shadow-sm">
+                            <div class="flex items-center">
+                                <div class="flex-shrink-0">
+                                    <i class="fas fa-exclamation-triangle text-red-600 text-2xl"></i>
+                                </div>
+                                <div class="ml-4">
+                                    <h3 class="text-lg leading-6 font-medium text-red-800">
+                                        Pemberitahuan
+                                    </h3>
+                                    <div class="mt-1 text-sm text-red-700">
+                                        <p>Mohon maaf, siswa yang bersangkutan dinyatakan <strong>TIDAK LULUS</strong>.</p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
                     `;
-                    tbody.innerHTML += row;
-                });
+                    specialMessageContainer.classList.remove('hidden');
 
-                // Total & Rata-rata
-                let total = siswa['JUMLAH'];
-                let rata = siswa['RATA'];
-                document.getElementById('resTotal').innerText = (typeof total === 'number') ? total.toFixed(2) : (total || "0");
-                document.getElementById('resAvg').innerText = (typeof rata === 'number') ? rata.toFixed(2) : (rata || "0");
+                } else {
+                    // Default / Ditunda
+                    badge.classList.add("bg-yellow-500");
+                    badge.innerText = status || "DITUNDA";
+                    
+                    rankContainer.classList.add('hidden');
+                    gradesContainer.classList.add('hidden');
+                    specialMessageContainer.classList.add('hidden');
+                }
+
+                // Render Nilai (Hanya jika tabelnya muncul / lulus)
+                if (status === "LULUS") {
+                    const tbody = document.getElementById('gradesTableBody');
+                    tbody.innerHTML = '';
+
+                    mapelConfig.forEach((mapel, index) => {
+                        let nilai = siswa[mapel.key];
+                        if (typeof nilai === 'number') {
+                            nilai = nilai.toFixed(2);
+                        } else if (!nilai) {
+                            nilai = "-";
+                        }
+
+                        const row = `
+                            <tr class="bg-white border-b hover:bg-gray-50">
+                                <td class="px-4 py-3 text-center font-medium text-gray-900">${index + 1}</td>
+                                <td class="px-4 py-3 text-gray-700">${mapel.label}</td>
+                                <td class="px-4 py-3 text-center font-bold text-gray-800">${nilai}</td>
+                            </tr>
+                        `;
+                        tbody.innerHTML += row;
+                    });
+
+                    // Total & Rata-rata
+                    let total = siswa['JUMLAH'];
+                    let rata = siswa['RATA'];
+                    document.getElementById('resTotal').innerText = (typeof total === 'number') ? total.toFixed(2) : (total || "0");
+                    document.getElementById('resAvg').innerText = (typeof rata === 'number') ? rata.toFixed(2) : (rata || "0");
+                }
 
             } else {
                 showError("NISN tidak ditemukan dalam database.");
@@ -537,7 +573,6 @@
             setTimeout(() => input.classList.remove('border-red-500'), 2000);
         }
 
-        // Fungsi Kembali kini hanya mengembalikan DOM seperti semula (tanpa reload)
         function resetApp() {
             // Kosongkan form input
             const form = document.getElementById('checkForm');
@@ -552,13 +587,6 @@
             
             // Berikan fokus kembali ke input NISN
             document.getElementById('nisnInput').focus();
-        }
-
-        function showDownloadModal() { document.getElementById('downloadModal').classList.remove('hidden'); }
-        function closeDownloadModal() { document.getElementById('downloadModal').classList.add('hidden'); }
-        window.onclick = function(event) {
-            const modal = document.getElementById('downloadModal');
-            if (event.target == modal) closeDownloadModal();
         }
     </script>
 </body>
